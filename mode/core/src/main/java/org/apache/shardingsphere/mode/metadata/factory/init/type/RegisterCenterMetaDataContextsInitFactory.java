@@ -52,6 +52,7 @@ public final class RegisterCenterMetaDataContextsInitFactory extends MetaDataCon
     
     @Override
     public MetaDataContexts create(final ContextManagerBuilderParameter param) throws SQLException {
+        mergeLocalConfigurationChanges(param);
         Map<String, DatabaseConfiguration> effectiveDatabaseConfigs = createEffectiveDatabaseConfigurations(getDatabaseNames(param.getDatabaseConfigs()), param.getDatabaseConfigs());
         Collection<RuleConfiguration> globalRuleConfigs = persistService.getGlobalRuleService().load();
         // TODO load global data sources from persist service
@@ -66,7 +67,20 @@ public final class RegisterCenterMetaDataContextsInitFactory extends MetaDataCon
                 ? databaseConfigs.keySet()
                 : persistService.getDatabaseMetaDataFacade().getDatabase().loadAllDatabaseNames();
     }
-    
+
+    private void mergeLocalConfigurationChanges(final ContextManagerBuilderParameter param) throws SQLException {
+        Collection<String> persistDatabaseNames = persistService.getDatabaseMetaDataFacade().getDatabase().loadAllDatabaseNames();
+        Map<String, DatabaseConfiguration> diffDatabaseConfigurations = param.getDatabaseConfigs().keySet().stream()
+                .filter(localDatabaseName -> !persistDatabaseNames.isEmpty() && !persistDatabaseNames.contains(localDatabaseName))
+                .collect(Collectors.toMap(key -> key, value -> param.getDatabaseConfigs().get(value)));
+
+        if (diffDatabaseConfigurations.isEmpty()) {
+            return;
+        }
+        ContextManagerBuilderParameter diffParam = new ContextManagerBuilderParameter(param.getModeConfiguration(), diffDatabaseConfigurations, param.getGlobalDataSources(), param.getGlobalRuleConfigs(), param.getProps(), param.getLabels(), param.getInstanceMetaData());
+        new LocalConfigurationMetaDataContextsInitFactory(persistService, instanceContext).create(diffParam);
+    }
+
     private Map<String, DatabaseConfiguration> createEffectiveDatabaseConfigurations(final Collection<String> databaseNames, final Map<String, DatabaseConfiguration> databaseConfigs) {
         return databaseNames.stream().collect(Collectors.toMap(each -> each, each -> createEffectiveDatabaseConfiguration(each, databaseConfigs)));
     }
