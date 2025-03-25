@@ -47,7 +47,7 @@ java.beans.Introspector was unintentionally initialized at build time. To see wh
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
-                <version>0.10.4</version>
+                <version>0.10.5</version>
                 <extensions>true</extensions>
                 <configuration>
                     <buildArgs>
@@ -85,12 +85,12 @@ java.beans.Introspector was unintentionally initialized at build time. To see wh
 
 ```groovy
 plugins {
-   id 'org.graalvm.buildtools.native' version '0.10.4'
+   id 'org.graalvm.buildtools.native' version '0.10.5'
 }
 
 dependencies {
    implementation 'org.apache.shardingsphere:shardingsphere-jdbc:${shardingsphere.version}'
-   implementation(group: 'org.graalvm.buildtools', name: 'graalvm-reachability-metadata', version: '0.10.4', classifier: 'repository', ext: 'zip')
+   implementation(group: 'org.graalvm.buildtools', name: 'graalvm-reachability-metadata', version: '0.10.5', classifier: 'repository', ext: 'zip')
 }
 
 graalvmNative {
@@ -389,11 +389,11 @@ Reachability Metadata 位于 `shardingsphere-infra-reachability-metadata` 子模
 ```bash
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -PgenerateMetadata -DskipNativeTests -e -T 1C clean test native:metadata-copy
+./mvnw -PgenerateMetadata -e -T 1C clean test native:metadata-copy
 ```
 
 受 https://github.com/apache/shardingsphere/issues/33206 影响，
-贡献者执行 `./mvnw -PgenerateMetadata -DskipNativeTests -T 1C -e clean test native:metadata-copy` 后，
+贡献者执行 `./mvnw -PgenerateMetadata -T 1C -e clean test native:metadata-copy` 后，
 `infra/reachability-metadata/src/main/resources/META-INF/native-image/org.apache.shardingsphere/generated-reachability-metadata/resource-config.json` 会生成不必要的包含绝对路径的 JSON 条目，
 类似如下，
 

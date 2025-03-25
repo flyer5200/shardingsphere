@@ -65,11 +65,11 @@ import org.apache.shardingsphere.infra.database.core.spi.DatabaseTypedSPILoader;
 import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.exception.core.ShardingSpherePreconditions;
 import org.apache.shardingsphere.infra.exception.generic.UnsupportedSQLOperationException;
-import org.apache.shardingsphere.infra.lock.LockContext;
-import org.apache.shardingsphere.infra.lock.LockDefinition;
+import org.apache.shardingsphere.mode.lock.LockContext;
+import org.apache.shardingsphere.mode.lock.LockDefinition;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.infra.parser.SQLParserEngine;
-import org.apache.shardingsphere.mode.lock.global.GlobalLockDefinition;
+import org.apache.shardingsphere.mode.manager.cluster.lock.global.GlobalLockDefinition;
 import org.apache.shardingsphere.mode.manager.ContextManager;
 import org.apache.shardingsphere.parser.rule.SQLParserRule;
 
@@ -113,7 +113,7 @@ public final class MigrationJobPreparer implements PipelineJobPreparer<Migration
         String jobId = jobConfig.getJobId();
         PipelineContextKey contextKey = PipelineJobIdUtils.parseContextKey(jobId);
         ContextManager contextManager = PipelineContextManager.getContext(contextKey).getContextManager();
-        LockContext lockContext = contextManager.getComputeNodeInstanceContext().getLockContext();
+        LockContext lockContext = contextManager.getLockContext();
         if (!jobItemManager.getProgress(jobId, jobItemContext.getShardingItem()).isPresent()) {
             jobItemManager.persistProgress(jobItemContext);
         }
@@ -189,7 +189,8 @@ public final class MigrationJobPreparer implements PipelineJobPreparer<Migration
         CreateIncrementalDumperParameter param = new CreateIncrementalDumperParameter(
                 dumperContext, dumperContext.getCommonContext().getPosition(), channel, jobItemContext.getSourceMetaDataLoader(), jobItemContext.getDataSourceManager());
         Dumper dumper = IncrementalDumperCreator.create(param);
-        Collection<Importer> importers = Collections.singletonList(new SingleChannelConsumerImporter(channel, 1, 5L, jobItemContext.getSink(), jobItemContext));
+        Collection<Importer> importers = Collections.singletonList(new SingleChannelConsumerImporter(channel, taskConfig.getImporterConfig().getBatchSize(), 1000L,
+                jobItemContext.getSink(), jobItemContext));
         PipelineTask incrementalTask = new IncrementalTask(dumperContext.getCommonContext().getDataSourceName(), incrementalExecuteEngine, dumper, importers, taskProgress);
         jobItemContext.getIncrementalTasks().add(incrementalTask);
     }

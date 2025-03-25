@@ -27,9 +27,9 @@ import org.apache.shardingsphere.infra.metadata.statistics.ShardingSphereStatist
 import org.apache.shardingsphere.infra.metadata.statistics.builder.ShardingSphereStatisticsFactory;
 import org.apache.shardingsphere.infra.rule.ShardingSphereRule;
 import org.apache.shardingsphere.infra.rule.builder.global.GlobalRulesBuilder;
-import org.apache.shardingsphere.mode.manager.ContextManagerBuilderParameter;
+import org.apache.shardingsphere.mode.manager.builder.ContextManagerBuilderParameter;
 import org.apache.shardingsphere.mode.metadata.MetaDataContexts;
-import org.apache.shardingsphere.mode.metadata.persist.MetaDataPersistService;
+import org.apache.shardingsphere.mode.metadata.persist.MetaDataPersistFacade;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -51,10 +51,10 @@ public abstract class MetaDataContextsInitFactory {
     public abstract MetaDataContexts create(ContextManagerBuilderParameter param) throws SQLException;
     
     protected final MetaDataContexts create(final Collection<RuleConfiguration> globalRuleConfigs, final Map<String, DataSource> globalDataSources,
-                                            final Collection<ShardingSphereDatabase> databases, final ConfigurationProperties props, final MetaDataPersistService persistService) {
+                                            final Collection<ShardingSphereDatabase> databases, final ConfigurationProperties props, final MetaDataPersistFacade persistFacade) {
         Collection<ShardingSphereRule> globalRules = GlobalRulesBuilder.buildRules(globalRuleConfigs, databases, props);
         ShardingSphereMetaData metaData = new ShardingSphereMetaData(databases, new ResourceMetaData(globalDataSources), new RuleMetaData(globalRules), props);
-        ShardingSphereStatistics statistics = ShardingSphereStatisticsFactory.create(metaData, persistService.getShardingSphereDataPersistService().load(metaData));
+        ShardingSphereStatistics statistics = ShardingSphereStatisticsFactory.create(metaData, persistFacade.getStatisticsService().load(metaData));
         return new MetaDataContexts(metaData, statistics);
     }
 }

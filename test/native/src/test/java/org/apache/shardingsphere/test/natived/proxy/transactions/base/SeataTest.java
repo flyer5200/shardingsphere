@@ -28,8 +28,8 @@ import org.apache.shardingsphere.test.natived.commons.proxy.ProxyTestingServer;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledInNativeImage;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -45,18 +45,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-/**
- * TODO Executing this unit test in the GraalVM Native Image of the Github Actions device results in a connection leak
- *  in {@code org.apache.shardingsphere.test.natived.jdbc.databases.FirebirdTest}.
- *  This requires further investigation.
- */
 @SuppressWarnings({"SqlNoDataSourceInspection", "resource"})
-@Disabled
+@EnabledInNativeImage
 @Testcontainers
 class SeataTest {
     
@@ -94,8 +90,13 @@ class SeataTest {
         });
     }
     
+    /**
+     * TODO Apparently there is a real connection leak on Seata Client 2.2.0.
+     *  Waiting for <a href="https://github.com/apache/incubator-seata/pull/7044">apache/incubator-seata#7044</a>.
+     */
     @AfterEach
     void afterEach() {
+        Awaitility.await().pollDelay(5L, TimeUnit.SECONDS).until(() -> true);
         proxyTestingServer.close();
         TmNettyRemotingClient.getInstance().destroy();
         RmNettyRemotingClient.getInstance().destroy();
@@ -121,37 +122,37 @@ class SeataTest {
                 Connection connection = openConnection("root", "root", "jdbc:postgresql://127.0.0.1:" + proxyTestingServer.getProxyPort() + "/sharding_db");
                 Statement statement = connection.createStatement()) {
             statement.execute("REGISTER STORAGE UNIT ds_0 (\n"
-                    + "  URL=\"jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_0\",\n"
-                    + "  USER=\"test\",\n"
-                    + "  PASSWORD=\"test\"\n"
+                    + "  URL='jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_0',\n"
+                    + "  USER='test',\n"
+                    + "  PASSWORD='test'\n"
                     + "),ds_1 (\n"
-                    + "  URL=\"jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_1\",\n"
-                    + "  USER=\"test\",\n"
-                    + "  PASSWORD=\"test\"\n"
+                    + "  URL='jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_1',\n"
+                    + "  USER='test',\n"
+                    + "  PASSWORD='test'\n"
                     + "),ds_2 (\n"
-                    + "  URL=\"jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_2\",\n"
-                    + "  USER=\"test\",\n"
-                    + "  PASSWORD=\"test\"\n"
+                    + "  URL='jdbc:postgresql://127.0.0.1:" + postgresContainer.getMappedPort(5432) + "/demo_ds_2',\n"
+                    + "  USER='test',\n"
+                    + "  PASSWORD='test'\n"
                     + ")");
             statement.execute("CREATE DEFAULT SHARDING DATABASE STRATEGY (\n"
-                    + "  TYPE=\"standard\", \n"
+                    + "  TYPE='standard', \n"
                     + "  SHARDING_COLUMN=user_id, \n"
                     + "  SHARDING_ALGORITHM(\n"
                     + "    TYPE(\n"
                     + "      NAME=CLASS_BASED, \n"
                     + "      PROPERTIES(\n"
-                    + "        \"strategy\"=\"STANDARD\",\n"
-                    + "        \"algorithmClassName\"=\"org.apache.shardingsphere.test.natived.commons.algorithm.ClassBasedInlineShardingAlgorithmFixture\"\n"
+                    + "        'strategy'='STANDARD',\n"
+                    + "        'algorithmClassName'='org.apache.shardingsphere.test.natived.commons.algorithm.ClassBasedInlineShardingAlgorithmFixture'\n"
                     + "      )\n"
                     + "    )\n"
                     + "  )\n"
                     + ")");
             statement.execute("CREATE SHARDING TABLE RULE t_order (\n"
-                    + "  DATANODES(\"<LITERAL>ds_0.t_order, ds_1.t_order, ds_2.t_order\"),\n"
-                    + "  KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME=\"SNOWFLAKE\"))\n"
+                    + "  DATANODES('<LITERAL>ds_0.t_order, ds_1.t_order, ds_2.t_order'),\n"
+                    + "  KEY_GENERATE_STRATEGY(COLUMN=order_id,TYPE(NAME='SNOWFLAKE'))\n"
                     + "), t_order_item (\n"
-                    + "  DATANODES(\"<LITERAL>ds_0.t_order_item, ds_1.t_order_item, ds_2.t_order_item\"),\n"
-                    + "  KEY_GENERATE_STRATEGY(COLUMN=order_item_id,TYPE(NAME=\"SNOWFLAKE\"))\n"
+                    + "  DATANODES('<LITERAL>ds_0.t_order_item, ds_1.t_order_item, ds_2.t_order_item'),\n"
+                    + "  KEY_GENERATE_STRATEGY(COLUMN=order_item_id,TYPE(NAME='SNOWFLAKE'))\n"
                     + ")");
             statement.execute("CREATE BROADCAST TABLE RULE t_address");
         }

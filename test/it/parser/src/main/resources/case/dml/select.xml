@@ -129,10 +129,10 @@
                         <right>
                             <list-expression start-index="40" stop-index="62">
                                 <items>
-                                    <literal-expression start-index="41" stop-index="50" value="latin1'a" />
+                                    <literal-expression start-index="41" stop-index="50" value="a" />
                                 </items>
                                 <items>
-                                    <literal-expression start-index="52" stop-index="61" value="latin1'b" />
+                                    <literal-expression start-index="52" stop-index="61" value="b" />
                                 </items>
                             </list-expression>
                         </right>
@@ -3466,6 +3466,32 @@
         </projections>
     </select>
 
+    <select sql-case-id="select_with_multi_quoted_string">
+        <from>
+            <simple-table name="t_order" start-index="14" stop-index="20" />
+        </from>
+        <projections start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7" />
+        </projections>
+        <where start-index="22" stop-index="45">
+            <expr>
+                <binary-operation-expression start-index="28" stop-index="45">
+                    <left>
+                        <column name="name" start-index="28" stop-index="31" />
+                    </left>
+                    <operator>LIKE</operator>
+                    <right>
+                        <list-expression start-index="38" stop-index="45">
+                            <items>
+                                <literal-expression value="%%" start-index="38" stop-index="45" />
+                            </items>
+                        </list-expression>
+                    </right>
+                </binary-operation-expression>
+            </expr>
+        </where>
+    </select>
+
     <select sql-case-id="select_special_function_nested" parameters="12, 1000">
         <from>
             <simple-table name="t_order" start-index="48" stop-index="54" />
@@ -5380,7 +5406,7 @@
     <select sql-case-id="select_with_character_charset">
         <projections start-index="7" stop-index="24">
             <!--    TODO StringLiteralValue should consider about _binary/_utf8mb4-->
-            <expression-projection text="binary'abc" alias="a" start-index="7" stop-index="24" />
+            <expression-projection text="abc" alias="a" start-index="7" stop-index="24" />
         </projections>
     </select>
 
@@ -9980,6 +10006,156 @@
                         <literal-expression start-index="40" stop-index="40" value="1" />
                     </right>
                     <operator>=</operator>
+                </binary-operation-expression>
+            </expr>
+        </where>
+    </select>
+
+    <select sql-case-id="select_with_multi_literals">
+        <projections start-index="7" stop-index="17">
+            <expression-projection text="xxx" start-index="7" stop-index="17">
+                <literal-expression start-index="7" stop-index="17" value="xxx" />
+            </expression-projection>
+        </projections>
+    </select>
+
+    <select sql-case-id="select_with_mixed_single_double_quoted_literals">
+        <projections start-index="7" stop-index="17">
+            <expression-projection text="xxx" start-index="7" stop-index="17">
+                <literal-expression start-index="7" stop-index="17" value="xxx" />
+            </expression-projection>
+        </projections>
+        <from>
+            <simple-table name="t_order" start-index="24" stop-index="30" />
+        </from>
+        <where start-index="32" stop-index="62">
+            <expr>
+                <binary-operation-expression text="status LIKE &quot;%&quot; '123' &quot;%&quot;" start-index="38" stop-index="62">
+                    <left>
+                        <column name="status" start-index="38" stop-index="43" />
+                    </left>
+                    <right>
+                        <list-expression start-index="50" stop-index="62">
+                            <items>
+                                <literal-expression start-index="50" stop-index="62" value="%123%" />
+                            </items>
+                        </list-expression>
+                    </right>
+                    <operator>LIKE</operator>
+                </binary-operation-expression>
+            </expr>
+        </where>
+    </select>
+
+    <select sql-case-id="select_is_not_nan">
+        <projections distinct-row="false" start-index="7" stop-index="14">
+            <aggregation-projection type="COUNT" expression="COUNT(*)" start-index="7" stop-index="14"/>
+        </projections>
+        <from start-delimiter="" end-delimiter="" start-index="21" stop-index="29">
+            <simple-table name="employees" start-delimiter="" end-delimiter="" start-index="21" stop-index="29"/>
+        </from>
+        <where start-index="31" stop-index="61">
+            <expr start-index="37" stop-index="61">
+                <binary-operation-expression start-index="37" stop-index="61">
+                    <left start-index="37" stop-index="50">
+                        <column name="commission_pct" start-delimiter="" end-delimiter="" start-index="37" stop-index="50"/>
+                    </left>
+                    <operator>IS</operator>
+                    <right start-index="55" stop-index="61">
+                        <literal-expression value="NOT NAN" start-index="55" stop-index="61"/>
+                    </right>
+                </binary-operation-expression>
+            </expr>
+        </where>
+    </select>
+    
+    <select sql-case-id="select_with_comparison_with_space">
+        <projections distinct-row="false" start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7"/>
+        </projections>
+        <from start-delimiter="" end-delimiter="" start-index="14" stop-index="17">
+            <simple-table name="test" start-delimiter="" end-delimiter="" start-index="14" stop-index="17"/>
+        </from>
+        <where start-index="19" stop-index="48">
+            <expr start-index="25" stop-index="48">
+                <binary-operation-expression start-index="25" stop-index="48">
+                    <left start-index="25" stop-index="32">
+                        <binary-operation-expression start-index="25" stop-index="32">
+                            <left start-index="25" stop-index="26">
+                                <column name="id" start-delimiter="" end-delimiter="" start-index="25" stop-index="26"/>
+                            </left>
+                            <operator>&gt;=</operator>
+                            <right start-index="32" stop-index="32">
+                                <literal-expression value="1" start-index="32" stop-index="32"/>
+                            </right>
+                        </binary-operation-expression>
+                    </left>
+                    <operator>or</operator>
+                    <right start-index="37" stop-index="48">
+                        <binary-operation-expression start-index="37" stop-index="48">
+                            <left start-index="37" stop-index="40">
+                                <column name="name" start-delimiter="" end-delimiter="" start-index="37" stop-index="40"/>
+                            </left>
+                            <operator>&lt;=</operator>
+                            <right start-index="48" stop-index="48">
+                                <literal-expression value="2" start-index="48" stop-index="48"/>
+                            </right>
+                        </binary-operation-expression>
+                    </right>
+                </binary-operation-expression>
+            </expr>
+        </where>
+    </select>
+    
+    <select sql-case-id="select_with_not_equal_comparison_with_space">
+        <projections start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7"/>
+        </projections>
+        <from start-index="14" stop-index="17">
+            <simple-table name="test" start-index="14" stop-index="17"/>
+        </from>
+        <where start-index="19" stop-index="62">
+            <expr start-index="25" stop-index="62">
+                <binary-operation-expression start-index="25" stop-index="62">
+                    <left start-index="25" stop-index="49">
+                        <binary-operation-expression start-index="25" stop-index="49">
+                            <left start-index="25" stop-index="33">
+                                <binary-operation-expression start-index="25" stop-index="33">
+                                    <left start-index="25" stop-index="26">
+                                        <column name="id" start-index="25" stop-index="26"/>
+                                    </left>
+                                    <operator>&lt;&gt;</operator>
+                                    <right start-index="33" stop-index="33">
+                                        <literal-expression value="1" start-index="33" stop-index="33"/>
+                                    </right>
+                                </binary-operation-expression>
+                            </left>
+                            <operator>and</operator>
+                            <right start-index="39" stop-index="49">
+                                <binary-operation-expression start-index="39" stop-index="49">
+                                    <left start-index="39" stop-index="42">
+                                        <column name="name" start-index="39" stop-index="42"/>
+                                    </left>
+                                    <operator>!=</operator>
+                                    <right start-index="49" stop-index="49">
+                                        <literal-expression value="1" start-index="49" stop-index="49"/>
+                                    </right>
+                                </binary-operation-expression>
+                            </right>
+                        </binary-operation-expression>
+                    </left>
+                    <operator>and</operator>
+                    <right start-index="55" stop-index="62">
+                        <binary-operation-expression start-index="55" stop-index="62">
+                            <left start-index="55" stop-index="56">
+                                <column name="id" start-index="55" stop-index="56"/>
+                            </left>
+                            <operator>^=</operator>
+                            <right start-index="62" stop-index="62">
+                                <literal-expression value="3" start-index="62" stop-index="62"/>
+                            </right>
+                        </binary-operation-expression>
+                    </right>
                 </binary-operation-expression>
             </expr>
         </where>

@@ -55,6 +55,6 @@ public final class QualifiedTable {
     
     @Override
     public String toString() {
-        return null == schemaName.getValue() ? tableName.getValue() : String.join(".", schemaName.getValue(), tableName.getValue());
+        return null == getSchemaName() ? getTableName() : String.join(".", getSchemaName(), getTableName());
     }
 }

@@ -1,16 +1,44 @@
 ## Release 5.5.3-SNAPSHOT
 
+### Metadata Storage Changes
+
+1. Remove `default_strategies` prefix on sharding rule metadata persist [#34664](https://github.com/apache/shardingsphere/pull/34664)
+   1. Change `metadata/${databaseName}/rules/sharding/default_strategies/default_database_strategy` to `metadata/${databaseName}/rules/sharding/default_database_strategy`
+   1. Change `metadata/${databaseName}/rules/sharding/default_strategies/default_table_strategy` to `metadata/${databaseName}/rules/sharding/default_table_strategy`
+   1. Change `metadata/${databaseName}/rules/sharding/default_strategies/default_key_generate_strategy` to `metadata/${databaseName}/rules/sharding/default_key_generate_strategy`
+   1. Change `metadata/${databaseName}/rules/sharding/default_strategies/default_audit_strategy` to `metadata/${databaseName}/rules/sharding/default_audit_strategy`
+   1. Change `metadata/${databaseName}/rules/sharding/default_strategies/default_sharding_column` to `metadata/${databaseName}/rules/sharding/default_sharding_column`
+
 ### API Changes
 
 ### New Features
 
 ### Enhancements
 
+1. Infra: Support for connecting to Presto's Memory Connector in ShardingSphere config - [#34432](https://github.com/apache/shardingsphere/pull/34432)
 1. Metadata: Add support for partition tables in PostgreSQL [#34346](https://github.com/apache/shardingsphere/pull/34346)
 1. SQL Binder: Support select aggregation function sql bind in projection and having - [#34379](https://github.com/apache/shardingsphere/pull/34379)
-1. Proxy Native: Add GraalVM Reachability Metadata and corresponding nativeTest for Firebird - [#34307](https://github.com/apache/shardingsphere/pull/34307)
+1. SQL Binder: Support column definition for the WITH clause and ExternalTableBinderContext in CommonTableExpressionBinder.[#34384](https://github.com/apache/shardingsphere/pull/34384)
+1. SQL Binder: Support case when then else segment bind - [#34600](https://github.com/apache/shardingsphere/pull/34600)
+1. SQL Binder: Support outer join expression bind - [#35019](https://github.com/apache/shardingsphere/pull/35019)
+1. SQL Parser: Support MySQL SELECT CAST AS YEAR statement parse - [#34638](https://github.com/apache/shardingsphere/pull/34638)
+1. SQL Parser: Support MySQL SELECT MAX(ALL expr) statement parse - [#34639](https://github.com/apache/shardingsphere/pull/34639)
+1. SQL Parser: Support MySQL INSERT with GEOMCOLLECTION function parse - [#34654](https://github.com/apache/shardingsphere/pull/34654)
+1. SQL Parser: Support MySQL DELETE with statement parse - [#34817](https://github.com/apache/shardingsphere/pull/34817) 
+1. Encrypt: Use EncryptDerivedColumnSuffix to enhance encrypt table subquery rewrite logic - [#34829](https://github.com/apache/shardingsphere/pull/34829)
+1. Encrypt: Add quotes to encrypt rewrite derived columns - [#34950](https://github.com/apache/shardingsphere/pull/34950)
+1. SQL Router: Add check for select with union all routing to multi data sources - [#35037](https://github.com/apache/shardingsphere/pull/35037)
+1. DistSQL: Add job sharding nodes to the result set of `SHOW MIGRATION LIST` - [#35053](https://github.com/apache/shardingsphere/pull/35053)
 
 ### Bug Fixes
+
+1. JDBC: Alleviate connection leaks caused by Seata Client throwing exceptions - [#34463](https://github.com/apache/shardingsphere/pull/34463)
+1. Mode: Fixes issue of drop schema can not work on standalone mode - [#34470](https://github.com/apache/shardingsphere/pull/34470)
+1. Mode: Fixes the exception to missing renamed schema name when alter schema - [#34465](https://github.com/apache/shardingsphere/pull/34465)
+1. SQL Parser: Fix set OnDuplicateKeyColumnsSegment on PostgreSQLInsertStatement - [#34425](https://github.com/apache/shardingsphere/pull/34425)
+1. SQL Parser: Fix mysql sql parser error when sql contains implicit concat expression - [#34660](https://github.com/apache/shardingsphere/pull/34660)
+1. JDBC: Fix wrong jdbc database metadata pass through logic - [#34959](https://github.com/apache/shardingsphere/pull/34959)
+1. JDBC: Fix getting database name from sql statement context - [#34960](https://github.com/apache/shardingsphere/pull/34960)
 
 ### Change Logs
 
@@ -73,7 +101,7 @@
 1. Agent: Simplify the use of Agent's Docker Image - [#33356](https://github.com/apache/shardingsphere/pull/33356)
 1. Mode: Support modifying Hikari-CP configurations via props in standalone mode [#34185](https://github.com/apache/shardingsphere/pull/34185)
 1. Encrypt: Support insert statement rewrite use quote [#34259](https://github.com/apache/shardingsphere/pull/34259)
-1. Infra: Support connecting to Firebird via jdbcUrl containing the absolute path to fdb - [#34335](https://github.com/apache/shardingsphere/pull/34335)
+1. SQL Parser: Support Quoted strings placed next to each other in MySQL parser. - [#34619](https://github.com/apache/shardingsphere/pull/34619)
 
 ### Bug Fixes
 
@@ -81,6 +109,7 @@
 1. SQL Parser: Fixes PostgreSQL and openGauss time extract function parse week and quarter error - [#33564](https://github.com/apache/shardingsphere/pull/33564)
 1. SQL Parser: Fixes MySQL parse zone unreserved keyword error - [#33720](https://github.com/apache/shardingsphere/pull/33720)
 1. SQL Parser: Fixes MySQL range parse error when use table owner - [#33874](https://github.com/apache/shardingsphere/pull/33874)
+1. SQL Parser: Fix the issue where join conditions cannot be extracted when more than two conditions are used - [#34707](https://github.com/apache/shardingsphere/pull/34707)
 1. SQL Binder: Fixes table does not exist exception when use HintManager#setDatabaseName to transparent - [#33370](https://github.com/apache/shardingsphere/pull/33370)
 1. SQL Binder: Use Multimap and CaseInsensitiveString to replace CaseInsensitiveMap for supporting MySQL multi table join with same table alias - [#33303](https://github.com/apache/shardingsphere/pull/33303)
 1. SQL Binder: Fixes the combine statement cannot find the outer table when bind - [#33357](https://github.com/apache/shardingsphere/pull/33357)

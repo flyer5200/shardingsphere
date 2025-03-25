@@ -23,6 +23,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.Co
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.BetweenExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.BinaryOperationExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.FunctionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.InExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.RowExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.complex.CommonTableExpressionSegment;
@@ -68,11 +69,8 @@ public final class ColumnExtractor {
         if (expression instanceof BinaryOperationExpression) {
             extractColumnsInBinaryOperationExpression((BinaryOperationExpression) expression, result);
         }
-        if (expression instanceof InExpression && ((InExpression) expression).getLeft() instanceof ColumnSegment) {
-            result.add((ColumnSegment) ((InExpression) expression).getLeft());
-        }
-        if (expression instanceof InExpression && ((InExpression) expression).getLeft() instanceof RowExpression) {
-            extractColumnsInRowExpression((InExpression) expression, result);
+        if (expression instanceof InExpression) {
+            extractColumnsInInExpression((InExpression) expression, result);
         }
         if (expression instanceof BetweenExpression) {
             extractColumnsInBetweenExpression((BetweenExpression) expression, result);
@@ -80,7 +78,23 @@ public final class ColumnExtractor {
         if (expression instanceof AggregationProjectionSegment) {
             extractColumnsInAggregationProjectionSegment((AggregationProjectionSegment) expression, result);
         }
+        if (expression instanceof FunctionSegment) {
+            extractColumnsInFunctionSegment((FunctionSegment) expression, result);
+        }
         return result;
+    }
+    
+    private static void extractColumnsInInExpression(final InExpression expression, final Collection<ColumnSegment> result) {
+        if (expression.getLeft() instanceof ColumnSegment) {
+            result.add((ColumnSegment) expression.getLeft());
+        }
+        if (expression.getLeft() instanceof RowExpression) {
+            extractColumnsInRowExpression((RowExpression) expression.getLeft(), result);
+        }
+        if (expression.getLeft() instanceof FunctionSegment) {
+            extractColumnsInFunctionSegment((FunctionSegment) expression.getLeft(), result);
+        }
+        result.addAll(extract(expression.getRight()));
     }
     
     private static void extractColumnsInBinaryOperationExpression(final BinaryOperationExpression expression, final Collection<ColumnSegment> result) {
@@ -115,8 +129,8 @@ public final class ColumnExtractor {
         result.addAll(extract(expression.getAndExpr()));
     }
     
-    private static void extractColumnsInRowExpression(final InExpression expression, final Collection<ColumnSegment> result) {
-        for (ExpressionSegment each : ((RowExpression) expression.getLeft()).getItems()) {
+    private static void extractColumnsInRowExpression(final RowExpression expression, final Collection<ColumnSegment> result) {
+        for (ExpressionSegment each : expression.getItems()) {
             if (each instanceof ColumnSegment) {
                 result.add((ColumnSegment) each);
             }
@@ -124,6 +138,16 @@ public final class ColumnExtractor {
     }
     
     private static void extractColumnsInAggregationProjectionSegment(final AggregationProjectionSegment expression, final Collection<ColumnSegment> result) {
+        for (ExpressionSegment each : expression.getParameters()) {
+            if (each instanceof ColumnSegment) {
+                result.add((ColumnSegment) each);
+            } else {
+                result.addAll(extract(each));
+            }
+        }
+    }
+    
+    private static void extractColumnsInFunctionSegment(final FunctionSegment expression, final Collection<ColumnSegment> result) {
         for (ExpressionSegment each : expression.getParameters()) {
             if (each instanceof ColumnSegment) {
                 result.add((ColumnSegment) each);

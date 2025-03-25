@@ -18,11 +18,9 @@
 package org.apache.shardingsphere.single.rule.changed;
 
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
-import org.apache.shardingsphere.mode.spi.rule.item.alter.AlterRuleItem;
-import org.apache.shardingsphere.mode.spi.rule.item.drop.DropRuleItem;
 import org.apache.shardingsphere.mode.spi.rule.RuleItemConfigurationChangedProcessor;
+import org.apache.shardingsphere.mode.spi.rule.RuleChangedItemType;
 import org.apache.shardingsphere.single.config.SingleRuleConfiguration;
-import org.apache.shardingsphere.single.metadata.nodepath.SingleRuleNodePathProvider;
 import org.apache.shardingsphere.single.rule.SingleRule;
 
 /**
@@ -31,7 +29,7 @@ import org.apache.shardingsphere.single.rule.SingleRule;
 public final class DefaultDataSourceChangedProcessor implements RuleItemConfigurationChangedProcessor<SingleRuleConfiguration, String> {
     
     @Override
-    public String swapRuleItemConfiguration(final AlterRuleItem alterRuleItem, final String yamlContent) {
+    public String swapRuleItemConfiguration(final String itemName, final String yamlContent) {
         return yamlContent;
     }
     
@@ -41,17 +39,17 @@ public final class DefaultDataSourceChangedProcessor implements RuleItemConfigur
     }
     
     @Override
-    public void changeRuleItemConfiguration(final AlterRuleItem alterRuleItem, final SingleRuleConfiguration currentRuleConfig, final String toBeChangedItemConfig) {
+    public void changeRuleItemConfiguration(final String itemName, final SingleRuleConfiguration currentRuleConfig, final String toBeChangedItemConfig) {
         currentRuleConfig.setDefaultDataSource(toBeChangedItemConfig);
     }
     
     @Override
-    public void dropRuleItemConfiguration(final DropRuleItem dropRuleItem, final SingleRuleConfiguration currentRuleConfig) {
+    public void dropRuleItemConfiguration(final String itemName, final SingleRuleConfiguration currentRuleConfig) {
         currentRuleConfig.setDefaultDataSource(null);
     }
     
     @Override
-    public String getType() {
-        return SingleRuleNodePathProvider.RULE_TYPE + "." + SingleRuleNodePathProvider.DEFAULT_DATA_SOURCE;
+    public RuleChangedItemType getType() {
+        return new RuleChangedItemType("single", "default_data_source");
     }
 }

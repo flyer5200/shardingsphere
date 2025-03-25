@@ -23,14 +23,18 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.TableSegmentBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.type.SimpleTableSegmentBinderContext;
+import org.apache.shardingsphere.infra.binder.engine.segment.util.SubqueryTableBindUtils;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.dml.SelectStatementBinder;
-import org.apache.shardingsphere.infra.binder.engine.segment.util.SubqueryTableBindUtils;
+import org.apache.shardingsphere.sql.parser.statement.core.enums.TableSourceType;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.subquery.SubquerySegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.AliasSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SubqueryTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
+
+import java.util.Collection;
 
 /**
  * Subquery table segment binder.
@@ -45,11 +49,12 @@ public final class SubqueryTableSegmentBinder {
      * @param binderContext SQL statement binder context
      * @param tableBinderContexts table binder contexts
      * @param outerTableBinderContexts outer table binder contexts
+     * @param fromWithSegment is from with segment
      * @return bound subquery table segment
      */
     public static SubqueryTableSegment bind(final SubqueryTableSegment segment, final SQLStatementBinderContext binderContext,
                                             final Multimap<CaseInsensitiveString, TableSegmentBinderContext> tableBinderContexts,
-                                            final Multimap<CaseInsensitiveString, TableSegmentBinderContext> outerTableBinderContexts) {
+                                            final Multimap<CaseInsensitiveString, TableSegmentBinderContext> outerTableBinderContexts, final boolean fromWithSegment) {
         fillPivotColumnNamesInBinderContext(segment, binderContext);
         SQLStatementBinderContext subqueryBinderContext =
                 new SQLStatementBinderContext(binderContext.getMetaData(), binderContext.getCurrentDatabaseName(), binderContext.getHintValueContext(), segment.getSubquery().getSelect());
@@ -61,8 +66,12 @@ public final class SubqueryTableSegmentBinder {
         IdentifierValue subqueryTableName = segment.getAliasSegment().map(AliasSegment::getIdentifier).orElseGet(() -> new IdentifierValue(""));
         SubqueryTableSegment result = new SubqueryTableSegment(segment.getStartIndex(), segment.getStopIndex(), boundSubquerySegment);
         segment.getAliasSegment().ifPresent(result::setAlias);
-        tableBinderContexts.put(new CaseInsensitiveString(subqueryTableName.getValue()), new SimpleTableSegmentBinderContext(
-                SubqueryTableBindUtils.createSubqueryProjections(boundSubSelect.getProjections().getProjections(), subqueryTableName, binderContext.getSqlStatement().getDatabaseType())));
+        Collection<ProjectionSegment> subqueryProjections =
+                SubqueryTableBindUtils.createSubqueryProjections(boundSubSelect.getProjections().getProjections(), subqueryTableName, binderContext.getSqlStatement().getDatabaseType(),
+                        TableSourceType.TEMPORARY_TABLE);
+        SimpleTableSegmentBinderContext tableBinderContext = new SimpleTableSegmentBinderContext(subqueryProjections, TableSourceType.TEMPORARY_TABLE);
+        tableBinderContext.setFromWithSegment(fromWithSegment);
+        tableBinderContexts.put(new CaseInsensitiveString(subqueryTableName.getValue()), tableBinderContext);
         return result;
     }
     

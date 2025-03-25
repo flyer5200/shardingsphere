@@ -1,6 +1,6 @@
 [
   {
-    "condition":{"typeReachable":"org.apache.shardingsphere.proxy.initializer.BootstrapInitializer"},
+    "condition":{"typeReachable":"org.apache.shardingsphere.driver.jdbc.core.datasource.ShardingSphereDataSource"},
     "interfaces":["java.sql.Connection"]
   },
   {

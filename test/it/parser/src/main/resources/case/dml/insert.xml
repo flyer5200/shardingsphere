@@ -508,13 +508,17 @@
             <assignment start-index="65" stop-index="69">
                 <column name="b" start-index="65" stop-index="65"  />
                 <assignment-value>
-                    <common-expression literal-text="n.a" start-index="67" stop-index="69" />
+                    <column name="a" start-index="67" stop-index="69">
+                        <owner name="n" start-index="67" stop-index="67" />
+                    </column>
                 </assignment-value>
             </assignment>
             <assignment start-index="72" stop-index="76">
                 <column name="a" start-index="72" stop-index="72"  />
                 <assignment-value>
-                    <common-expression literal-text="n.b" start-index="74" stop-index="76" />
+                    <column name="b" start-index="74" stop-index="76" >
+                        <owner name="n" start-index="74" stop-index="74" />
+                    </column>
                 </assignment-value>
             </assignment>
         </on-duplicate-key-columns>
@@ -4319,5 +4323,28 @@
                 </expression-projection>
             </projections>
         </returning>
+    </insert>
+
+    <insert sql-case-id="insert_with_geom_collection_function">
+        <table name="t1" start-index="12" stop-index="13" />
+        <columns start-index="14" stop-index="14" />
+        <values>
+            <value>
+                <assignment-value>
+                    <function function-name="GEOMCOLLECTION" text="GEOMCOLLECTION(POINT(0, 0))" start-index="23" stop-index="49">
+                        <parameter>
+                            <function function-name="POINT" text="POINT(0, 0)" start-index="38" stop-index="48">
+                                <parameter>
+                                    <literal-expression value="0" start-index="44" stop-index="44" />
+                                </parameter>
+                                <parameter>
+                                    <literal-expression value="0" start-index="47" stop-index="47" />
+                                </parameter>
+                            </function>
+                        </parameter>
+                    </function>
+                </assignment-value>
+            </value>
+        </values>
     </insert>
 </sql-parser-test-cases>

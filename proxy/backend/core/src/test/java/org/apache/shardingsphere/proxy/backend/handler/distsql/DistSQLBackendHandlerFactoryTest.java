@@ -28,7 +28,7 @@ import org.apache.shardingsphere.infra.metadata.database.resource.ResourceMetaDa
 import org.apache.shardingsphere.infra.metadata.database.rule.RuleMetaData;
 import org.apache.shardingsphere.mode.manager.ContextManager;
 import org.apache.shardingsphere.mode.metadata.MetaDataContexts;
-import org.apache.shardingsphere.mode.persist.service.divided.MetaDataManagerPersistService;
+import org.apache.shardingsphere.mode.persist.service.MetaDataManagerPersistService;
 import org.apache.shardingsphere.proxy.backend.context.ProxyContext;
 import org.apache.shardingsphere.proxy.backend.response.header.query.QueryResponseHeader;
 import org.apache.shardingsphere.proxy.backend.response.header.update.UpdateResponseHeader;
@@ -101,7 +101,7 @@ class DistSQLBackendHandlerFactoryTest {
         MetaDataContexts metaDataContexts = mockMetaDataContexts(database);
         when(result.getDatabase("foo_db")).thenReturn(database);
         when(result.getMetaDataContexts()).thenReturn(metaDataContexts);
-        when(result.getPersistServiceFacade().getMetaDataManagerPersistService()).thenReturn(mock(MetaDataManagerPersistService.class));
+        when(result.getPersistServiceFacade().getModeFacade().getMetaDataManagerService()).thenReturn(mock(MetaDataManagerPersistService.class));
         when(result.getComputeNodeInstanceContext().getModeConfiguration().getType()).thenReturn("Cluster");
         return result;
     }

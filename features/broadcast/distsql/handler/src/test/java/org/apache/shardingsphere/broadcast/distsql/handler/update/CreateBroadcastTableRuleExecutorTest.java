@@ -26,7 +26,7 @@ import org.apache.shardingsphere.infra.exception.kernel.metadata.rule.DuplicateR
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.rule.RuleMetaData;
 import org.apache.shardingsphere.mode.manager.ContextManager;
-import org.apache.shardingsphere.mode.persist.service.divided.MetaDataManagerPersistService;
+import org.apache.shardingsphere.mode.persist.service.MetaDataManagerPersistService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -71,8 +71,8 @@ class CreateBroadcastTableRuleExecutorTest {
         when(rule.getTables()).thenReturn(Collections.singleton("foo_tbl"));
         ContextManager contextManager = mockContextManager(database, rule);
         new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", contextManager).executeUpdate();
-        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getMetaDataManagerPersistService();
-        verify(metaDataManagerPersistService).alterRuleConfiguration(eq("foo_db"),
+        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getModeFacade().getMetaDataManagerService();
+        verify(metaDataManagerPersistService).alterRuleConfiguration(any(),
                 ArgumentMatchers.<BroadcastRuleConfiguration>argThat(x -> x.getTables().equals(new HashSet<>(Arrays.asList("foo_tbl", "bar_tbl")))));
     }
     
@@ -84,8 +84,8 @@ class CreateBroadcastTableRuleExecutorTest {
         when(rule.getTables()).thenReturn(Collections.singleton("foo_tbl"));
         ContextManager contextManager = mockContextManager(database, rule);
         new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", contextManager).executeUpdate();
-        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getMetaDataManagerPersistService();
-        verify(metaDataManagerPersistService).alterRuleConfiguration(eq("foo_db"),
+        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getModeFacade().getMetaDataManagerService();
+        verify(metaDataManagerPersistService).alterRuleConfiguration(any(),
                 ArgumentMatchers.<BroadcastRuleConfiguration>argThat(x -> x.getTables().equals(new HashSet<>(Arrays.asList("foo_tbl", "bar_tbl")))));
     }
     
@@ -95,8 +95,8 @@ class CreateBroadcastTableRuleExecutorTest {
         ShardingSphereDatabase database = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
         ContextManager contextManager = mockContextManager(database, null);
         new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", contextManager).executeUpdate();
-        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getMetaDataManagerPersistService();
-        verify(metaDataManagerPersistService).alterRuleConfiguration(eq("foo_db"),
+        MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getModeFacade().getMetaDataManagerService();
+        verify(metaDataManagerPersistService).alterRuleConfiguration(any(),
                 ArgumentMatchers.<BroadcastRuleConfiguration>argThat(x -> x.getTables().equals(new HashSet<>(Arrays.asList("foo_tbl", "bar_tbl")))));
     }
     
