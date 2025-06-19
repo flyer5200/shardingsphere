@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterLanguageStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL alter language statement.
+ * Alter language statement for PostgreSQL.
  */
-public final class PostgreSQLAlterLanguageStatement extends AlterLanguageStatement implements PostgreSQLStatement {
+public final class PostgreSQLAlterLanguageStatement extends AbstractSQLStatement implements DDLStatement {
 }

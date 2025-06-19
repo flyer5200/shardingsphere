@@ -18,7 +18,6 @@
 package org.apache.shardingsphere.sharding.checker.sql.ddl;
 
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.statement.ddl.CreateFunctionStatementContext;
 import org.apache.shardingsphere.infra.checker.SupportedSQLChecker;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereSchema;
@@ -35,16 +34,16 @@ import java.util.Optional;
 /**
  * Create function supported checker for sharding.
  */
-public final class ShardingCreateFunctionSupportedChecker implements SupportedSQLChecker<CreateFunctionStatementContext, ShardingRule> {
+public final class ShardingCreateFunctionSupportedChecker implements SupportedSQLChecker<SQLStatementContext, ShardingRule> {
     
     @Override
     public boolean isCheck(final SQLStatementContext sqlStatementContext) {
-        return sqlStatementContext instanceof CreateFunctionStatementContext;
+        return sqlStatementContext.getSqlStatement() instanceof CreateFunctionStatement;
     }
     
     @Override
-    public void check(final ShardingRule rule, final ShardingSphereDatabase database, final ShardingSphereSchema currentSchema, final CreateFunctionStatementContext sqlStatementContext) {
-        CreateFunctionStatement createFunctionStatement = sqlStatementContext.getSqlStatement();
+    public void check(final ShardingRule rule, final ShardingSphereDatabase database, final ShardingSphereSchema currentSchema, final SQLStatementContext sqlStatementContext) {
+        CreateFunctionStatement createFunctionStatement = (CreateFunctionStatement) sqlStatementContext.getSqlStatement();
         Optional<RoutineBodySegment> routineBodySegment = createFunctionStatement.getRoutineBody();
         if (!routineBodySegment.isPresent()) {
             return;

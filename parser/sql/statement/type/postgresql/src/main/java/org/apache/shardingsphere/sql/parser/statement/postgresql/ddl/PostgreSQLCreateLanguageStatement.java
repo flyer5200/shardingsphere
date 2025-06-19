@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateLanguageStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL create language statement.
+ * Create language statement for PostgreSQL.
  */
-public final class PostgreSQLCreateLanguageStatement extends CreateLanguageStatement implements PostgreSQLStatement {
+public final class PostgreSQLCreateLanguageStatement extends AbstractSQLStatement implements DDLStatement {
 }

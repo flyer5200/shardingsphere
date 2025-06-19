@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.mysql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterInstanceStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.MySQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * MySQL alter instance statement.
+ * Alter instance statement for MySQL.
  */
-public final class MySQLAlterInstanceStatement extends AlterInstanceStatement implements MySQLStatement {
+public final class MySQLAlterInstanceStatement extends AbstractSQLStatement implements DDLStatement {
 }

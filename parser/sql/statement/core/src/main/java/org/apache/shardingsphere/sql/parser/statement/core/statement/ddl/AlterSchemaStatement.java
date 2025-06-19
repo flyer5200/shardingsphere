@@ -29,9 +29,11 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class AlterSchemaStatement extends AbstractSQLStatement implements DDLStatement {
+public class AlterSchemaStatement extends AbstractSQLStatement implements DDLStatement {
     
     private IdentifierValue schemaName;
+    
+    private IdentifierValue renameSchema;
     
     /**
      * Get rename schema.
@@ -39,6 +41,6 @@ public abstract class AlterSchemaStatement extends AbstractSQLStatement implemen
      * @return rename schema
      */
     public Optional<IdentifierValue> getRenameSchema() {
-        return Optional.empty();
+        return Optional.ofNullable(renameSchema);
     }
 }

@@ -25,10 +25,8 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.ModelSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WindowSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.dml.MySQLSelectStatement;
 import org.apache.shardingsphere.test.it.sql.parser.internal.asserts.SQLCaseAssertContext;
 import org.apache.shardingsphere.test.it.sql.parser.internal.asserts.segment.SQLSegmentAssert;
 import org.apache.shardingsphere.test.it.sql.parser.internal.asserts.segment.groupby.GroupByClauseAssert;
@@ -113,15 +111,6 @@ public final class SelectStatementAssert {
             assertTrue(actual.getFrom().isPresent(), assertContext.getText("Actual from segment should exist."));
             TableAssert.assertIs(assertContext, actual.getFrom().get(), expected.getFrom());
         }
-        if (actual instanceof MySQLSelectStatement) {
-            if (null == expected.getSimpleTable()) {
-                assertFalse(((MySQLSelectStatement) actual).getTable().isPresent(), assertContext.getText("Actual simple-table should not exist."));
-            } else {
-                Optional<SimpleTableSegment> table = ((MySQLSelectStatement) actual).getTable();
-                assertTrue(table.isPresent(), assertContext.getText("Actual table segment should exist."));
-                TableAssert.assertIs(assertContext, table.orElse(null), expected.getSimpleTable());
-            }
-        }
     }
     
     private static void assertWhereClause(final SQLCaseAssertContext assertContext, final SelectStatement actual, final SelectStatementTestCase expected) {
@@ -174,7 +163,7 @@ public final class SelectStatementAssert {
     }
     
     private static void assertWithClause(final SQLCaseAssertContext assertContext, final SelectStatement actual, final SelectStatementTestCase expected) {
-        Optional<WithSegment> withSegment = actual.getWithSegment();
+        Optional<WithSegment> withSegment = actual.getWith();
         if (null == expected.getWithClause()) {
             assertFalse(withSegment.isPresent(), assertContext.getText("Actual with segment should not exist."));
         } else {
@@ -197,7 +186,7 @@ public final class SelectStatementAssert {
     }
     
     private static void assertModelClause(final SQLCaseAssertContext assertContext, final SelectStatement actual, final SelectStatementTestCase expected) {
-        Optional<ModelSegment> modelSegment = actual.getModelSegment();
+        Optional<ModelSegment> modelSegment = actual.getModel();
         if (null == expected.getModelClause()) {
             assertFalse(modelSegment.isPresent(), assertContext.getText("Actual model segment should not exist."));
         } else {
@@ -207,7 +196,7 @@ public final class SelectStatementAssert {
     }
     
     private static void assertIntoClause(final SQLCaseAssertContext assertContext, final SelectStatement actual, final SelectStatementTestCase expected) {
-        Optional<TableSegment> intoSegment = actual.getIntoSegment();
+        Optional<TableSegment> intoSegment = actual.getInto();
         if (null == expected.getIntoClause()) {
             assertFalse(intoSegment.isPresent(), assertContext.getText("Actual into segment should not exist."));
         } else {

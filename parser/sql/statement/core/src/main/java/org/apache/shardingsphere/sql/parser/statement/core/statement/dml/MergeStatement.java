@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.index.IndexSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionWithParamsSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.hint.OptionHintSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.hint.WithTableHintSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.merge.MergeWhenAndThenSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.OutputSegment;
@@ -29,7 +30,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Optional;
 
 /**
@@ -37,7 +38,7 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class MergeStatement extends AbstractSQLStatement implements DMLStatement {
+public final class MergeStatement extends AbstractSQLStatement implements DMLStatement {
     
     private TableSegment target;
     
@@ -48,6 +49,18 @@ public abstract class MergeStatement extends AbstractSQLStatement implements DML
     private UpdateStatement update;
     
     private InsertStatement insert;
+    
+    private WithSegment with;
+    
+    private WithTableHintSegment withTableHint;
+    
+    private Collection<IndexSegment> indexes = new LinkedList<>();
+    
+    private OutputSegment output;
+    
+    private OptionHintSegment optionHint;
+    
+    private Collection<MergeWhenAndThenSegment> whenAndThens = new LinkedList<>();
     
     /**
      * Get update statement.
@@ -68,47 +81,38 @@ public abstract class MergeStatement extends AbstractSQLStatement implements DML
     }
     
     /**
-     * Get with segment.
+     * Get with.
      *
-     * @return with segment
+     * @return with
      */
-    public Optional<WithSegment> getWithSegment() {
-        return Optional.empty();
+    public Optional<WithSegment> getWith() {
+        return Optional.ofNullable(with);
     }
     
     /**
-     * Get with table hint segment.
+     * Get with table hint.
      *
-     * @return with table hint segment
+     * @return with table hint
      */
-    public Optional<WithTableHintSegment> getWithTableHintSegment() {
-        return Optional.empty();
+    public Optional<WithTableHintSegment> getWithTableHint() {
+        return Optional.ofNullable(withTableHint);
     }
     
     /**
-     * Get output segment.
+     * Get output.
      *
-     * @return output segment
+     * @return output
      */
-    public Optional<OutputSegment> getOutputSegment() {
-        return Optional.empty();
+    public Optional<OutputSegment> getOutput() {
+        return Optional.ofNullable(output);
     }
     
     /**
-     * Get when and then segments.
+     * Get option hint.
      *
-     * @return when and then segments
+     * @return option hint.
      */
-    public Collection<MergeWhenAndThenSegment> getWhenAndThenSegments() {
-        return Collections.emptyList();
-    }
-    
-    /**
-     * Get index segments.
-     *
-     * @return index segments
-     */
-    public Collection<IndexSegment> getIndexes() {
-        return Collections.emptyList();
+    public Optional<OptionHintSegment> getOptionHint() {
+        return Optional.ofNullable(optionHint);
     }
 }

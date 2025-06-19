@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropForeignTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL drop foreign table statement.
+ * Drop foreign table statement for PostgreSQL.
  */
-public final class PostgreSQLDropForeignTableStatement extends DropForeignTableStatement implements PostgreSQLStatement {
+public final class PostgreSQLDropForeignTableStatement extends AbstractSQLStatement implements DDLStatement {
 }

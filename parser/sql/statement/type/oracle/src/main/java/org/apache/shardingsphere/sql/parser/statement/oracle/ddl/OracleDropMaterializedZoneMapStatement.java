@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropMaterializedZoneMapStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle drop materialized zone map statement.
+ * Drop materialized zone map statement for Oracle.
  */
-public final class OracleDropMaterializedZoneMapStatement extends DropMaterializedZoneMapStatement implements OracleStatement {
+public final class OracleDropMaterializedZoneMapStatement extends AbstractSQLStatement implements DDLStatement {
 }

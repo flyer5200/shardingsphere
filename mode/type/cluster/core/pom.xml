@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
-            <artifactId>shardingsphere-cluster-mode-repository-api</artifactId>
+            <artifactId>shardingsphere-cluster-mode-repository-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

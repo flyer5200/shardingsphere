@@ -17,12 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.core.statement;
 
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
-import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
 import org.apache.shardingsphere.sql.parser.api.ASTNode;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.CommentSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.ParameterMarkerSegment;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * SQL statement.
@@ -37,20 +36,30 @@ public interface SQLStatement extends ASTNode {
     int getParameterCount();
     
     /**
-     * Get database type.
+     * Get parameter marker segments.
      *
-     * @return database type
+     * @return parameter marker segments
      */
-    default DatabaseType getDatabaseType() {
-        return TypedSPILoader.getService(DatabaseType.class, "SQL92");
-    }
+    Collection<ParameterMarkerSegment> getParameterMarkers();
+    
+    /**
+     * Add parameter marker segments.
+     *
+     * @param segments parameter marker segments
+     */
+    void addParameterMarkers(Collection<ParameterMarkerSegment> segments);
     
     /**
      * Get variable names.
      *
      * @return variable names
      */
-    default Collection<String> getVariableNames() {
-        return Collections.emptyList();
-    }
+    Collection<String> getVariableNames();
+    
+    /**
+     * Get comment segments.
+     *
+     * @return comment segments
+     */
+    Collection<CommentSegment> getComments();
 }

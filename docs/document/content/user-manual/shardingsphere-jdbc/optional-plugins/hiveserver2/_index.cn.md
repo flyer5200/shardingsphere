@@ -22,11 +22,6 @@ ShardingSphere 对 HiveServer2 JDBC Driver 的支持位于可选模块中。
     </dependency>
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-infra-database-hive</artifactId>
-        <version>${shardingsphere.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.shardingsphere</groupId>
         <artifactId>shardingsphere-parser-sql-hive</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
@@ -65,11 +60,6 @@ ShardingSphere 对 HiveServer2 JDBC Driver 的支持位于可选模块中。
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
         <artifactId>shardingsphere-jdbc</artifactId>
-        <version>${shardingsphere.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-infra-database-hive</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
     <dependency>
@@ -183,7 +173,7 @@ rules:
 - !SHARDING
     tables:
       t_order:
-        actualDataNodes:
+        actualDataNodes: <LITERAL>ds_0.t_order, ds_1.t_order, ds_2.t_order
         keyGenerateStrategy:
           column: order_id
           keyGeneratorName: snowflake
@@ -221,7 +211,7 @@ public class ExampleUtils {
              Statement statement = connection.createStatement()) {
             statement.execute("INSERT INTO t_order (user_id, order_type, address_id, status) VALUES (1, 1, 1, 'INSERT_TEST')");
             statement.executeQuery("SELECT * FROM t_order");
-            statement.execute("DELETE FROM t_order WHERE order_id=1");
+            statement.execute("DELETE FROM t_order WHERE user_id=1");
         }
     }
 }
@@ -309,7 +299,7 @@ rules:
 - !SHARDING
     tables:
       t_order:
-        actualDataNodes:
+        actualDataNodes: <LITERAL>ds_0.t_order, ds_1.t_order, ds_2.t_order
         keyGenerateStrategy:
           column: order_id
           keyGeneratorName: snowflake
@@ -481,6 +471,10 @@ HiveServer2 并不能保证每一条 `insert` 相关的 DML SQL 都能成功执�
 
 ShardingSphere JDBC DataSource 尚不支持执行 HiveServer2 的 `set`，`create table`，`truncate table` 和 `drop table` 语句。
 用户应考虑为 ShardingSphere 提交包含单元测试的 PR。
+
+#### 使用 `initFile` 参数部分绕开 SQL 限制
+
+受 https://issues.apache.org/jira/browse/HIVE-28835 影响，HiveServer2 JDBC Driver 的`initFile` 参数仅可在 Linux 环境下使用。
 
 以 `set` 为代表的 SQL 语句很容易在 HiveServer2 Client 级别被动态配置。
 即便 ShardingSphere JDBC 不支持在虚拟 DataSource 上执行 HiveServer2 的 `set` 语句，

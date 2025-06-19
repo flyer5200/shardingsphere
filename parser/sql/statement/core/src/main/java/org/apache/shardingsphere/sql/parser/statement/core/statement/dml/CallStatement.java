@@ -17,10 +17,21 @@
 
 package org.apache.shardingsphere.sql.parser.statement.core.statement.dml;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+
+import java.util.List;
 
 /**
  * Call statement.
  */
-public abstract class CallStatement extends AbstractSQLStatement implements DMLStatement {
+@RequiredArgsConstructor
+@Getter
+public final class CallStatement extends AbstractSQLStatement implements DMLStatement {
+    
+    private final String procedureName;
+    
+    private final List<ExpressionSegment> parameters;
 }

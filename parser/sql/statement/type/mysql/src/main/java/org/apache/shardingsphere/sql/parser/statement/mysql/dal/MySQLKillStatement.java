@@ -17,11 +17,19 @@
 
 package org.apache.shardingsphere.sql.parser.statement.mysql.dal;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.KillStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.MySQLStatement;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.DALStatement;
 
 /**
- * MySQL kill statement.
+ * Kill statement for MySQL.
  */
-public final class MySQLKillStatement extends KillStatement implements MySQLStatement {
+@RequiredArgsConstructor
+@Getter
+public final class MySQLKillStatement extends AbstractSQLStatement implements DALStatement {
+    
+    private final String processId;
+    
+    private final String scope;
 }

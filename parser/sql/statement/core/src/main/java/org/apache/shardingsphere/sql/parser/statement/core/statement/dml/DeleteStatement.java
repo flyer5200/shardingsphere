@@ -27,19 +27,30 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.Outpu
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.WithAvailable;
 
 import java.util.Optional;
 
 /**
  * Delete statement.
  */
+@Getter
 @Setter
-public abstract class DeleteStatement extends AbstractSQLStatement implements DMLStatement {
+public final class DeleteStatement extends AbstractSQLStatement implements DMLStatement, WithAvailable {
     
-    @Getter
     private TableSegment table;
     
     private WhereSegment where;
+    
+    private OrderBySegment orderBy;
+    
+    private LimitSegment limit;
+    
+    private WithSegment with;
+    
+    private ReturningSegment returning;
+    
+    private OutputSegment output;
     
     /**
      * Get where.
@@ -56,7 +67,7 @@ public abstract class DeleteStatement extends AbstractSQLStatement implements DM
      * @return order by
      */
     public Optional<OrderBySegment> getOrderBy() {
-        return Optional.empty();
+        return Optional.ofNullable(orderBy);
     }
     
     /**
@@ -65,65 +76,29 @@ public abstract class DeleteStatement extends AbstractSQLStatement implements DM
      * @return limit
      */
     public Optional<LimitSegment> getLimit() {
-        return Optional.empty();
+        return Optional.ofNullable(limit);
     }
     
     /**
-     * Get output segment.
+     * Get returning.
      *
-     * @return output segment
+     * @return returning
      */
-    public Optional<OutputSegment> getOutputSegment() {
-        return Optional.empty();
+    public Optional<ReturningSegment> getReturning() {
+        return Optional.ofNullable(returning);
     }
     
     /**
-     * Get with segment.
+     * Get output.
      *
-     * @return with segment
+     * @return output
      */
-    public Optional<WithSegment> getWithSegment() {
-        return Optional.empty();
+    public Optional<OutputSegment> getOutput() {
+        return Optional.ofNullable(output);
     }
     
-    /**
-     * Set order by segment.
-     *
-     * @param orderBySegment order by segment
-     */
-    public void setOrderBy(final OrderBySegment orderBySegment) {
-    }
-    
-    /**
-     * Set limit segment.
-     *
-     * @param limitSegment limit segment
-     */
-    public void setLimit(final LimitSegment limitSegment) {
-    }
-    
-    /**
-     * Set output segment.
-     *
-     * @param outputSegment output segment
-     */
-    public void setOutputSegment(final OutputSegment outputSegment) {
-    }
-    
-    /**
-     * Set with segment.
-     *
-     * @param withSegment with segment
-     */
-    public void setWithSegment(final WithSegment withSegment) {
-    }
-    
-    /**
-     * Get returning segment of delete statement.
-     *
-     * @return returning segment
-     */
-    public Optional<ReturningSegment> getReturningSegment() {
-        return Optional.empty();
+    @Override
+    public Optional<WithSegment> getWith() {
+        return Optional.ofNullable(with);
     }
 }

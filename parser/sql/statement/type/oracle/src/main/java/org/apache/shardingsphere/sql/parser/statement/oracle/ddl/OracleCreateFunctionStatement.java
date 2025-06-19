@@ -19,24 +19,20 @@ package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.procedure.ProcedureCallNameSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.procedure.SQLStatementSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateFunctionStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.plsql.ProcedureCallNameSegment;
-import org.apache.shardingsphere.sql.parser.statement.oracle.plsql.SQLStatementSegment;
 
 import java.util.List;
 
 /**
- * Oracle create function statement.
+ * Create function statement for Oracle.
  */
 @RequiredArgsConstructor
 @Getter
-public final class OracleCreateFunctionStatement extends CreateFunctionStatement implements OracleStatement {
+public final class OracleCreateFunctionStatement extends CreateFunctionStatement {
     
     private final List<SQLStatementSegment> sqlStatements;
     
     private final List<ProcedureCallNameSegment> procedureCallNames;
-    
-    private final List<ExpressionSegment> dynamicSqlStatementExpressions;
 }

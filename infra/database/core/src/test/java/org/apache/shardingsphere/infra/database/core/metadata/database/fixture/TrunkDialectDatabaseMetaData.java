@@ -17,11 +17,12 @@
 
 package org.apache.shardingsphere.infra.database.core.metadata.database.fixture;
 
-import org.apache.shardingsphere.infra.database.core.metadata.database.DialectDatabaseMetaData;
 import org.apache.shardingsphere.infra.database.core.metadata.database.enums.NullsOrderType;
 import org.apache.shardingsphere.infra.database.core.metadata.database.enums.QuoteCharacter;
-
-import java.util.Optional;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.DialectDatabaseMetaData;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.IdentifierPatternType;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.schema.DefaultSchemaOption;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.schema.DialectSchemaOption;
 
 public final class TrunkDialectDatabaseMetaData implements DialectDatabaseMetaData {
     
@@ -31,13 +32,18 @@ public final class TrunkDialectDatabaseMetaData implements DialectDatabaseMetaDa
     }
     
     @Override
+    public IdentifierPatternType getIdentifierPatternType() {
+        return IdentifierPatternType.KEEP_ORIGIN;
+    }
+    
+    @Override
     public NullsOrderType getDefaultNullsOrderType() {
         return NullsOrderType.LOW;
     }
     
     @Override
-    public Optional<String> getDefaultSchema() {
-        return Optional.of("test");
+    public DialectSchemaOption getSchemaOption() {
+        return new DefaultSchemaOption(false, "test");
     }
     
     @Override

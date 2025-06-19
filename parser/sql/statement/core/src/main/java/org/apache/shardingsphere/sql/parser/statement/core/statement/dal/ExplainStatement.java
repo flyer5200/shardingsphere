@@ -17,46 +17,30 @@
 
 package org.apache.shardingsphere.sql.parser.statement.core.statement.dal;
 
-import lombok.Setter;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.sql.parser.statement.core.extractor.TableExtractor;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.TableAvailable;
 
-import java.util.Optional;
+import java.util.Collection;
 
 /**
  * Explain statement.
  */
-@Setter
-public abstract class ExplainStatement extends AbstractSQLStatement implements DALStatement {
+@RequiredArgsConstructor
+@Getter
+public final class ExplainStatement extends AbstractSQLStatement implements DALStatement, TableAvailable {
     
-    private SQLStatement sqlStatement;
+    private final SQLStatement explainableSQLStatement;
     
-    /**
-     * Get SQL statement.
-     *
-     * @return SQL statement
-     */
-    public Optional<SQLStatement> getSqlStatement() {
-        return Optional.ofNullable(sqlStatement);
-    }
-    
-    /**
-     * Get simple table.
-     *
-     * @return simple table
-     */
-    public Optional<SimpleTableSegment> getSimpleTable() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Get column segment.
-     *
-     * @return column segment
-     */
-    public Optional<ColumnSegment> getColumnWild() {
-        return Optional.empty();
+    @Override
+    public Collection<SimpleTableSegment> getTables() {
+        TableExtractor extractor = new TableExtractor();
+        // TODO extract table from declare, execute, createMaterializedView, refreshMaterializedView
+        extractor.extractTablesFromSQLStatement(explainableSQLStatement);
+        return extractor.getRewriteTables();
     }
 }

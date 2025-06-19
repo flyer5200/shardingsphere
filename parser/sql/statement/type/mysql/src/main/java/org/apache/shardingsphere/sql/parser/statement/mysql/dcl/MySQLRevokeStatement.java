@@ -23,17 +23,16 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dcl.RoleOrPri
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dcl.UserSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.GrantLevelSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.RevokeStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.MySQLStatement;
 
 import java.util.Collection;
 import java.util.LinkedList;
 
 /**
- * MySQL revoke statement.
+ * Revoke statement for MySQL.
  */
 @Getter
 @Setter
-public final class MySQLRevokeStatement extends RevokeStatement implements MySQLStatement {
+public final class MySQLRevokeStatement extends RevokeStatement {
     
     private final Collection<RoleOrPrivilegeSegment> roleOrPrivileges = new LinkedList<>();
     

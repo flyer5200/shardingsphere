@@ -22,9 +22,9 @@ import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.distsql.statement.DistSQLStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.AnalyzeTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ResetParameterStatement;
+import org.apache.shardingsphere.sql.parser.statement.postgresql.dal.PostgreSQLResetParameterStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.SetStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.VacuumStatement;
+import org.apache.shardingsphere.sql.parser.statement.postgresql.dal.PostgreSQLVacuumStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterFunctionStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterIndexStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterProcedureStatement;
@@ -43,6 +43,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateS
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateTableStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateTablespaceStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateViewStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CursorStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DeclareStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropDatabaseStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropFunctionStatement;
@@ -67,8 +68,6 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.tcl.Release
 import org.apache.shardingsphere.sql.parser.statement.core.statement.tcl.RollbackStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.tcl.SavepointStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.tcl.SetTransactionStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.tcl.StartTransactionStatement;
-import org.apache.shardingsphere.sql.parser.statement.opengauss.ddl.OpenGaussCursorStatement;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -91,7 +90,7 @@ public enum PostgreSQLCommand {
     CALL(CallStatement.class),
     DO(DoStatement.class),
     ANALYZE(AnalyzeTableStatement.class),
-    VACUUM(VacuumStatement.class),
+    VACUUM(PostgreSQLVacuumStatement.class),
     ALTER_FUNCTION(AlterFunctionStatement.class),
     ALTER_INDEX(AlterIndexStatement.class),
     ALTER_PROCEDURE(AlterProcedureStatement.class),
@@ -120,14 +119,14 @@ public enum PostgreSQLCommand {
     DROP_VIEW(DropViewStatement.class),
     TRUNCATE_TABLE(TruncateStatement.class),
     BEGIN(BeginTransactionStatement.class),
-    START_TRANSACTION(StartTransactionStatement.class),
+    START_TRANSACTION(BeginTransactionStatement.class),
     COMMIT(CommitStatement.class),
     SAVEPOINT(SavepointStatement.class),
     ROLLBACK(RollbackStatement.class),
     RELEASE(ReleaseSavepointStatement.class),
     SET(SetStatement.class, SetTransactionStatement.class),
-    RESET(ResetParameterStatement.class),
-    DECLARE_CURSOR(OpenGaussCursorStatement.class, DeclareStatement.class),
+    RESET(PostgreSQLResetParameterStatement.class),
+    DECLARE_CURSOR(CursorStatement.class, DeclareStatement.class),
     MOVE(MoveStatement.class),
     CLOSE_CURSOR(CloseStatement.class),
     SUCCESS(DistSQLStatement.class);
@@ -163,7 +162,7 @@ public enum PostgreSQLCommand {
     }
     
     private static CachedResult compute(final Class<? extends SQLStatement> target) {
-        Optional<PostgreSQLCommand> result = Arrays.stream(PostgreSQLCommand.values()).filter(each -> matches(target, each)).findAny();
+        Optional<PostgreSQLCommand> result = Arrays.stream(values()).filter(each -> matches(target, each)).findAny();
         return result.map(CachedResult::new).orElse(CachedResult.EMPTY);
     }
     

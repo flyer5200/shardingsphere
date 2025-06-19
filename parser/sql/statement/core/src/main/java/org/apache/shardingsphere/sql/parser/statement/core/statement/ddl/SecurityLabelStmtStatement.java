@@ -22,5 +22,5 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQL
 /**
  * Security label statement.
  */
-public abstract class SecurityLabelStmtStatement extends AbstractSQLStatement implements DDLStatement {
+public final class SecurityLabelStmtStatement extends AbstractSQLStatement implements DDLStatement {
 }

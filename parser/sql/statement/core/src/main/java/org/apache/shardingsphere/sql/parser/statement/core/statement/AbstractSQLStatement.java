@@ -23,7 +23,6 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.Comme
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.ParameterMarkerSegment;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 
@@ -31,29 +30,25 @@ import java.util.LinkedList;
  * SQL statement abstract class.
  */
 @Getter
-public abstract class AbstractSQLStatement implements SQLStatement {
+public class AbstractSQLStatement implements SQLStatement {
     
-    private final Collection<ParameterMarkerSegment> parameterMarkerSegments = new LinkedHashSet<>();
+    private final Collection<Integer> uniqueParameterIndexes = new LinkedHashSet<>();
     
-    private final Collection<Integer> uniqueParameterIndexes = new HashSet<>();
-    
-    private final Collection<CommentSegment> commentSegments = new LinkedList<>();
+    private final Collection<ParameterMarkerSegment> parameterMarkers = new LinkedList<>();
     
     private final Collection<String> variableNames = new CaseInsensitiveSet<>();
     
+    private final Collection<CommentSegment> comments = new LinkedList<>();
+    
     @Override
-    public int getParameterCount() {
+    public final int getParameterCount() {
         return uniqueParameterIndexes.size();
     }
     
-    /**
-     * Add parameter marker segment.
-     *
-     * @param parameterMarkerSegments parameter marker segment collection
-     */
-    public void addParameterMarkerSegments(final Collection<ParameterMarkerSegment> parameterMarkerSegments) {
-        for (ParameterMarkerSegment each : parameterMarkerSegments) {
-            this.parameterMarkerSegments.add(each);
+    @Override
+    public final void addParameterMarkers(final Collection<ParameterMarkerSegment> segments) {
+        for (ParameterMarkerSegment each : segments) {
+            parameterMarkers.add(each);
             uniqueParameterIndexes.add(each.getParameterIndex());
         }
     }

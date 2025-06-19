@@ -27,9 +27,11 @@ import java.util.Optional;
  * Create schema statement.
  */
 @Setter
-public abstract class CreateSchemaStatement extends AbstractSQLStatement implements DDLStatement {
+public class CreateSchemaStatement extends AbstractSQLStatement implements DDLStatement {
     
     private IdentifierValue schemaName;
+    
+    private IdentifierValue username;
     
     /**
      * Get schema name.
@@ -46,6 +48,6 @@ public abstract class CreateSchemaStatement extends AbstractSQLStatement impleme
      * @return username
      */
     public Optional<IdentifierValue> getUsername() {
-        return Optional.empty();
+        return Optional.ofNullable(username);
     }
 }

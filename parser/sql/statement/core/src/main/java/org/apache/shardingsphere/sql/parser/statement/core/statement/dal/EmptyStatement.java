@@ -22,10 +22,5 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQL
 /**
  * Empty statement.
  */
-public class EmptyStatement extends AbstractSQLStatement {
-    
-    @Override
-    public int getParameterCount() {
-        return 0;
-    }
+public final class EmptyStatement extends AbstractSQLStatement implements DALStatement {
 }

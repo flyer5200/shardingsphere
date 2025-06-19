@@ -17,7 +17,7 @@
 
 package org.apache.shardingsphere.sql.parser.statement.core.statement.available;
 
-import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.DatabaseSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dal.FromDatabaseSegment;
 
 import java.util.Optional;
 
@@ -27,9 +27,9 @@ import java.util.Optional;
 public interface FromDatabaseAvailable {
     
     /**
-     * Get database.
+     * Get from database.
      *
-     * @return database segment
+     * @return from database
      */
-    Optional<DatabaseSegment> getDatabase();
+    Optional<FromDatabaseSegment> getFromDatabase();
 }

@@ -20,8 +20,7 @@ package org.apache.shardingsphere.sharding.route.engine.type;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.type.CursorAvailable;
-import org.apache.shardingsphere.infra.binder.context.type.TableAvailable;
+import org.apache.shardingsphere.infra.binder.context.available.CursorContextAvailable;
 import org.apache.shardingsphere.infra.config.props.ConfigurationProperties;
 import org.apache.shardingsphere.infra.hint.HintValueContext;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
@@ -49,7 +48,6 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropPro
 import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.DMLStatement;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Sharding routing engine factory.
@@ -73,7 +71,7 @@ public final class ShardingRouteEngineFactory {
         SQLStatementContext sqlStatementContext = queryContext.getSqlStatementContext();
         SQLStatement sqlStatement = sqlStatementContext.getSqlStatement();
         if (sqlStatement instanceof DDLStatement) {
-            return sqlStatementContext instanceof CursorAvailable
+            return sqlStatementContext instanceof CursorContextAvailable
                     ? getCursorRouteEngine(rule, sqlStatementContext, queryContext.getHintValueContext(), shardingConditions, logicTableNames, props)
                     : getDDLRouteEngine(database, sqlStatementContext, logicTableNames);
         }
@@ -120,18 +118,14 @@ public final class ShardingRouteEngineFactory {
     }
     
     private static boolean isDCLForSingleTable(final SQLStatementContext sqlStatementContext) {
-        if (sqlStatementContext instanceof TableAvailable) {
-            TableAvailable tableSegmentsAvailable = (TableAvailable) sqlStatementContext;
-            return 1 == tableSegmentsAvailable.getTablesContext().getSimpleTables().size()
-                    && !"*".equals(tableSegmentsAvailable.getTablesContext().getSimpleTables().iterator().next().getTableName().getIdentifier().getValue());
-        }
-        return false;
+        return 1 == sqlStatementContext.getTablesContext().getSimpleTables().size()
+                && !"*".equals(sqlStatementContext.getTablesContext().getSimpleTables().iterator().next().getTableName().getIdentifier().getValue());
     }
     
     private static ShardingRouteEngine getDQLRouteEngine(final ShardingRule rule, final SQLStatementContext sqlStatementContext,
                                                          final QueryContext queryContext, final ShardingConditions shardingConditions, final Collection<String> logicTableNames,
                                                          final ConfigurationProperties props) {
-        Collection<String> tableNames = sqlStatementContext instanceof TableAvailable ? ((TableAvailable) sqlStatementContext).getTablesContext().getTableNames() : Collections.emptyList();
+        Collection<String> tableNames = sqlStatementContext.getTablesContext().getTableNames();
         if (sqlStatementContext.getSqlStatement() instanceof DMLStatement && shardingConditions.isAlwaysFalse() || tableNames.isEmpty()) {
             return new ShardingUnicastRouteEngine(sqlStatementContext, tableNames, queryContext.getConnectionContext());
         }

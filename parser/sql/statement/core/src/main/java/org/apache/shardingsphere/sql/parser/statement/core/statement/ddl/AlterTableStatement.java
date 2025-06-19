@@ -25,15 +25,19 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.column.al
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.column.alter.ModifyCollectionRetrievalSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.column.alter.ModifyColumnDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.column.alter.RenameColumnSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.constraint.ConstraintSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.constraint.alter.AddConstraintDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.constraint.alter.DropConstraintDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.constraint.alter.ModifyConstraintDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.constraint.alter.ValidateConstraintDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.index.DropIndexDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.index.RenameIndexDefinitionSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.table.AlgorithmTypeSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.table.ConvertTableDefinitionSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.table.LockTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.ConstraintAvailable;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -44,13 +48,19 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class AlterTableStatement extends AbstractSQLStatement implements DDLStatement {
+public final class AlterTableStatement extends AbstractSQLStatement implements DDLStatement, ConstraintAvailable {
     
     private SimpleTableSegment table;
     
     private SimpleTableSegment renameTable;
     
     private ConvertTableDefinitionSegment convertTableDefinition;
+    
+    private ModifyCollectionRetrievalSegment modifyCollectionRetrieval;
+    
+    private AlgorithmTypeSegment algorithmSegment;
+    
+    private LockTableSegment lockTableSegment;
     
     private final Collection<AddColumnDefinitionSegment> addColumnDefinitions = new LinkedList<>();
     
@@ -93,19 +103,40 @@ public abstract class AlterTableStatement extends AbstractSQLStatement implement
     }
     
     /**
-     * Set modify collection retrieval.
-     *
-     * @param modifyCollectionRetrieval modify collection retrieval
-     */
-    public void setModifyCollectionRetrieval(final ModifyCollectionRetrievalSegment modifyCollectionRetrieval) {
-    }
-    
-    /**
      * Get modify collection retrieval.
      *
      * @return modify collection retrieval
      */
     public Optional<ModifyCollectionRetrievalSegment> getModifyCollectionRetrieval() {
-        return Optional.empty();
+        return Optional.ofNullable(modifyCollectionRetrieval);
+    }
+    
+    /**
+     * Get algorithm segment.
+     *
+     * @return algorithm segment
+     */
+    public Optional<AlgorithmTypeSegment> getGetAlgorithmSegment() {
+        return Optional.ofNullable(algorithmSegment);
+    }
+    
+    /**
+     * Get lock table Segment.
+     *
+     * @return lock table segment
+     */
+    public Optional<LockTableSegment> getLockTableSegment() {
+        return Optional.ofNullable(lockTableSegment);
+    }
+    
+    @Override
+    public Collection<ConstraintSegment> getConstraints() {
+        Collection<ConstraintSegment> result = new LinkedList<>();
+        for (AddConstraintDefinitionSegment each : addConstraintDefinitions) {
+            each.getConstraintDefinition().getConstraintName().ifPresent(result::add);
+        }
+        validateConstraintDefinitions.stream().map(ValidateConstraintDefinitionSegment::getConstraintName).forEach(result::add);
+        dropConstraintDefinitions.stream().map(DropConstraintDefinitionSegment::getConstraintName).forEach(result::add);
+        return result;
     }
 }

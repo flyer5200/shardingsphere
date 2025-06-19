@@ -19,10 +19,18 @@ package org.apache.shardingsphere.sql.parser.statement.core.statement.ddl;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.shardingsphere.sql.parser.statement.core.extractor.TableExtractor;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.routine.FunctionNameSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.routine.RoutineBodySegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.TableAvailable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,9 +38,13 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class CreateFunctionStatement extends AbstractSQLStatement implements DDLStatement {
+public class CreateFunctionStatement extends AbstractSQLStatement implements DDLStatement, TableAvailable {
     
     private FunctionNameSegment functionName;
+    
+    private RoutineBodySegment routineBody;
+    
+    private final List<ExpressionSegment> dynamicSqlStatementExpressions = new ArrayList<>();
     
     /**
      * Get function name segment.
@@ -49,6 +61,11 @@ public abstract class CreateFunctionStatement extends AbstractSQLStatement imple
      * @return routine body
      */
     public Optional<RoutineBodySegment> getRoutineBody() {
-        return Optional.empty();
+        return Optional.ofNullable(routineBody);
+    }
+    
+    @Override
+    public Collection<SimpleTableSegment> getTables() {
+        return getRoutineBody().map(optional -> new TableExtractor().extractExistTableFromRoutineBody(optional)).orElseGet(Collections::emptyList);
     }
 }

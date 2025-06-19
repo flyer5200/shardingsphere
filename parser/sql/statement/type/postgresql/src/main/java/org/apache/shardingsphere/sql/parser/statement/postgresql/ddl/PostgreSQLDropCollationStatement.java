@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropCollationStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL drop collation statement.
+ * Drop collation statement for PostgreSQL.
  */
-public final class PostgreSQLDropCollationStatement extends DropCollationStatement implements PostgreSQLStatement {
+public final class PostgreSQLDropCollationStatement extends AbstractSQLStatement implements DDLStatement {
 }

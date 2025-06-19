@@ -18,7 +18,7 @@
 package org.apache.shardingsphere.sharding.checker.sql.ddl;
 
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.statement.ddl.CreateProcedureStatementContext;
+import org.apache.shardingsphere.infra.binder.context.statement.type.ddl.CreateProcedureStatementContext;
 import org.apache.shardingsphere.infra.checker.SupportedSQLChecker;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereSchema;
@@ -55,7 +55,6 @@ public final class ShardingCreateProcedureSupportedChecker implements SupportedS
         ShardingSphereSchema schema = createProcedureStatement.getProcedureName().flatMap(optional -> optional.getOwner()
                 .map(owner -> database.getSchema(owner.getIdentifier().getValue()))).orElse(currentSchema);
         ShardingSupportedCommonChecker.checkTableExist(schema, existTables);
-        Collection<SimpleTableSegment> notExistTables = extractor.extractNotExistTableFromRoutineBody(routineBodySegment.get());
-        ShardingSupportedCommonChecker.checkTableNotExist(schema, notExistTables);
+        ShardingSupportedCommonChecker.checkTableNotExist(schema, extractor.extractNotExistTableFromRoutineBody(routineBodySegment.get()));
     }
 }

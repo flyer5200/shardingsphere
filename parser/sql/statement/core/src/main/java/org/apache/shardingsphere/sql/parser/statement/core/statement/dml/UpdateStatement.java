@@ -22,6 +22,7 @@ import lombok.Setter;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.ReturningSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.assignment.SetAssignmentSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.hint.OptionHintSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.hint.WithTableHintSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.order.OrderBySegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.pagination.limit.LimitSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
@@ -29,6 +30,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.Outpu
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.WithAvailable;
 
 import java.util.Optional;
 
@@ -37,7 +39,7 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class UpdateStatement extends AbstractSQLStatement implements DMLStatement {
+public final class UpdateStatement extends AbstractSQLStatement implements DMLStatement, WithAvailable {
     
     private TableSegment table;
     
@@ -45,149 +47,116 @@ public abstract class UpdateStatement extends AbstractSQLStatement implements DM
     
     private WhereSegment where;
     
+    private OrderBySegment orderBy;
+    
+    private LimitSegment limit;
+    
+    private TableSegment from;
+    
+    private WhereSegment deleteWhere;
+    
+    private WithSegment with;
+    
+    private ReturningSegment returning;
+    
+    private WithTableHintSegment withTableHint;
+    
+    private OptionHintSegment optionHint;
+    
+    private OutputSegment output;
+    
     /**
      * Get where.
      *
-     * @return where segment
+     * @return where
      */
     public Optional<WhereSegment> getWhere() {
         return Optional.ofNullable(where);
     }
     
     /**
-     * Get assignment segment.
+     * Get assignment.
      *
-     * @return assignment segment
+     * @return assignment
      */
-    public Optional<SetAssignmentSegment> getAssignmentSegment() {
+    public Optional<SetAssignmentSegment> getAssignment() {
         return Optional.ofNullable(setAssignment);
     }
     
     /**
-     * Get order by segment.
+     * Get order by.
      *
-     * @return order by segment
+     * @return order by
      */
     public Optional<OrderBySegment> getOrderBy() {
-        return Optional.empty();
+        return Optional.ofNullable(orderBy);
     }
     
     /**
-     * Get limit segment.
+     * Get limit.
      *
-     * @return limit segment
+     * @return limit
      */
     public Optional<LimitSegment> getLimit() {
-        return Optional.empty();
+        return Optional.ofNullable(limit);
     }
     
     /**
-     * Get with segment.
+     * Get option hint.
      *
-     * @return with segment
+     * @return option hint
      */
-    public Optional<WithSegment> getWithSegment() {
-        return Optional.empty();
+    public Optional<OptionHintSegment> getOptionHint() {
+        return Optional.ofNullable(optionHint);
     }
     
     /**
-     * Get delete where segment.
+     * Get output.
      *
-     * @return delete where segment
+     * @return output
      */
-    public Optional<WhereSegment> getDeleteWhere() {
-        return Optional.empty();
+    public Optional<OutputSegment> getOutput() {
+        return Optional.ofNullable(output);
     }
     
     /**
-     * Get option hint segment.
+     * Get from.
      *
-     * @return option hint segment
-     */
-    public Optional<OptionHintSegment> getOptionHintSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set order by segment.
-     *
-     * @param orderBySegment order by segment
-     */
-    public void setOrderBy(final OrderBySegment orderBySegment) {
-    }
-    
-    /**
-     * Set limit segment.
-     *
-     * @param limitSegment limit segment
-     */
-    public void setLimit(final LimitSegment limitSegment) {
-    }
-    
-    /**
-     * Set with segment.
-     *
-     * @param withSegment with segment
-     */
-    public void setWithSegment(final WithSegment withSegment) {
-    }
-    
-    /**
-     * Set delete where segment.
-     *
-     * @param deleteWhereSegment delete where segment
-     */
-    public void setDeleteWhere(final WhereSegment deleteWhereSegment) {
-    }
-    
-    /**
-     * Get output segment.
-     *
-     * @return output segment
-     */
-    public Optional<OutputSegment> getOutputSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set output segment.
-     *
-     * @param outputSegment output segment
-     */
-    public void setOutputSegment(final OutputSegment outputSegment) {
-    }
-    
-    /**
-     * Get from segment.
-     *
-     * @return from segment
+     * @return from
      */
     public Optional<TableSegment> getFrom() {
-        return Optional.empty();
+        return Optional.ofNullable(from);
     }
     
     /**
-     * Set from segment.
+     * Get delete where.
      *
-     * @param from from segment
+     * @return delete where
      */
-    public void setFrom(final TableSegment from) {
+    public Optional<WhereSegment> getDeleteWhere() {
+        return Optional.ofNullable(deleteWhere);
     }
     
     /**
-     * Get returning segment of update statement.
+     * Get returning.
      *
      * @return returning segment
      */
-    public Optional<ReturningSegment> getReturningSegment() {
-        return Optional.empty();
+    public Optional<ReturningSegment> getReturning() {
+        return Optional.ofNullable(returning);
     }
     
     /**
-     * Set returning segment of update statement.
+     * Get with table hint.
      *
-     * @param returningSegment returning segment
+     * @return with table hint.
      */
-    public void setReturningSegment(final ReturningSegment returningSegment) {
+    public Optional<WithTableHintSegment> getWithTableHint() {
+        return Optional.ofNullable(withTableHint);
+    }
+    
+    @Override
+    public Optional<WithSegment> getWith() {
+        return Optional.ofNullable(with);
     }
 }

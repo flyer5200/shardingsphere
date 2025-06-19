@@ -17,11 +17,12 @@
 
 package org.apache.shardingsphere.infra.database.hive.metadata.database;
 
-import org.apache.shardingsphere.infra.database.core.metadata.database.DialectDatabaseMetaData;
 import org.apache.shardingsphere.infra.database.core.metadata.database.enums.NullsOrderType;
 import org.apache.shardingsphere.infra.database.core.metadata.database.enums.QuoteCharacter;
-
-import java.util.Optional;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.DialectDatabaseMetaData;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.IdentifierPatternType;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.schema.DefaultSchemaOption;
+import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.schema.DialectSchemaOption;
 
 /**
  * Database meta data of Hive.
@@ -34,13 +35,18 @@ public final class HiveDatabaseMetaData implements DialectDatabaseMetaData {
     }
     
     @Override
+    public IdentifierPatternType getIdentifierPatternType() {
+        return IdentifierPatternType.KEEP_ORIGIN;
+    }
+    
+    @Override
     public NullsOrderType getDefaultNullsOrderType() {
         return NullsOrderType.LOW;
     }
     
     @Override
-    public Optional<String> getDefaultSchema() {
-        return Optional.of("default");
+    public DialectSchemaOption getSchemaOption() {
+        return new DefaultSchemaOption(false, "default");
     }
     
     @Override

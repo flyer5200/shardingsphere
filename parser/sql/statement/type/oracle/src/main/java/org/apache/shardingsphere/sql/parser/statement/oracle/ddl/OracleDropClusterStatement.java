@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropClusterStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle drop cluster statement.
+ * Drop cluster statement for Oracle.
  */
-public final class OracleDropClusterStatement extends DropClusterStatement implements OracleStatement {
+public final class OracleDropClusterStatement extends AbstractSQLStatement implements DDLStatement {
 }

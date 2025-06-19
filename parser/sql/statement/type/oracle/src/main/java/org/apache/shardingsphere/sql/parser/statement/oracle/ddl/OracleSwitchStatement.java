@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.SwitchStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle switch statement.
+ * Switch statement for Oracle.
  */
-public final class OracleSwitchStatement extends SwitchStatement implements OracleStatement {
+public final class OracleSwitchStatement extends AbstractSQLStatement implements DDLStatement {
 }

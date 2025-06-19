@@ -28,9 +28,13 @@ import java.util.Optional;
  * Alter index statement.
  */
 @Setter
-public abstract class AlterIndexStatement extends AbstractSQLStatement implements DDLStatement {
+public final class AlterIndexStatement extends AbstractSQLStatement implements DDLStatement {
     
     private IndexSegment index;
+    
+    private IndexSegment renameIndex;
+    
+    private SimpleTableSegment simpleTable;
     
     /**
      * Get index segment.
@@ -42,28 +46,20 @@ public abstract class AlterIndexStatement extends AbstractSQLStatement implement
     }
     
     /**
-     * Get simple table segment.
-     *
-     * @return simple table segment
-     */
-    public Optional<SimpleTableSegment> getSimpleTable() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set simple table segment.
-     *
-     * @param simpleTableSegment simple table segment
-     */
-    public void setSimpleTable(final SimpleTableSegment simpleTableSegment) {
-    }
-    
-    /**
      * Get rename index segment.
      *
      * @return rename index segment
      */
     public Optional<IndexSegment> getRenameIndex() {
-        return Optional.empty();
+        return Optional.ofNullable(renameIndex);
+    }
+    
+    /**
+     * Get simple table segment.
+     *
+     * @return simple table segment
+     */
+    public Optional<SimpleTableSegment> getSimpleTable() {
+        return Optional.ofNullable(simpleTable);
     }
 }

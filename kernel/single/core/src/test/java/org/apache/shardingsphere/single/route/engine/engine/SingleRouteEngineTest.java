@@ -17,7 +17,6 @@
 
 package org.apache.shardingsphere.single.route.engine.engine;
 
-import org.apache.shardingsphere.infra.database.mysql.type.MySQLDatabaseType;
 import org.apache.shardingsphere.infra.datanode.DataNode;
 import org.apache.shardingsphere.infra.exception.dialect.exception.syntax.table.TableExistsException;
 import org.apache.shardingsphere.infra.hint.HintValueContext;
@@ -34,8 +33,8 @@ import org.apache.shardingsphere.single.rule.SingleRule;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateTableStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
-import org.apache.shardingsphere.sql.parser.statement.mysql.ddl.MySQLCreateTableStatement;
 import org.apache.shardingsphere.test.fixture.jdbc.MockedDataSource;
 import org.junit.jupiter.api.Test;
 
@@ -64,8 +63,8 @@ class SingleRouteEngineTest {
     
     @Test
     void assertRouteInSameDataSource() throws SQLException {
-        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), null, mock(HintValueContext.class));
-        SingleRule singleRule = new SingleRule(new SingleRuleConfiguration(), "foo_db", new MySQLDatabaseType(), createDataSourceMap(), Collections.emptyList());
+        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), null, mock());
+        SingleRule singleRule = new SingleRule(new SingleRuleConfiguration(), "foo_db", mock(), createDataSourceMap(), Collections.emptyList());
         singleRule.getAttributes().getAttribute(DataNodeRuleAttribute.class).getAllDataNodes().put("t_order", Collections.singleton(mockDataNode("t_order")));
         singleRule.getAttributes().getAttribute(DataNodeRuleAttribute.class).getAllDataNodes().put("t_order_item", Collections.singleton(mockDataNode("t_order_item")));
         RouteContext routeContext = new RouteContext();
@@ -95,10 +94,9 @@ class SingleRouteEngineTest {
     
     @Test
     void assertRouteWithoutSingleRule() throws SQLException {
-        MySQLCreateTableStatement sqlStatement = new MySQLCreateTableStatement();
-        sqlStatement.setIfNotExists(false);
-        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), sqlStatement, mock(HintValueContext.class));
-        SingleRule singleRule = new SingleRule(new SingleRuleConfiguration(), "foo_db", new MySQLDatabaseType(), createDataSourceMap(), Collections.emptyList());
+        CreateTableStatement sqlStatement = new CreateTableStatement();
+        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), sqlStatement, mock());
+        SingleRule singleRule = new SingleRule(new SingleRuleConfiguration(), "foo_db", mock(), createDataSourceMap(), Collections.emptyList());
         RouteContext routeContext = new RouteContext();
         engine.route(routeContext, singleRule);
         List<RouteUnit> routeUnits = new ArrayList<>(routeContext.getRouteUnits());
@@ -112,11 +110,9 @@ class SingleRouteEngineTest {
     
     @Test
     void assertRouteWithDefaultSingleRule() throws SQLException {
-        MySQLCreateTableStatement sqlStatement = new MySQLCreateTableStatement();
-        sqlStatement.setIfNotExists(false);
-        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), sqlStatement, mock(HintValueContext.class));
-        SingleRule singleRule =
-                new SingleRule(new SingleRuleConfiguration(Collections.emptyList(), "ds_0"), "foo_db", new MySQLDatabaseType(), createDataSourceMap(), Collections.emptyList());
+        CreateTableStatement sqlStatement = new CreateTableStatement();
+        SingleRouteEngine engine = new SingleRouteEngine(mockQualifiedTables(), sqlStatement, mock());
+        SingleRule singleRule = new SingleRule(new SingleRuleConfiguration(Collections.emptyList(), "ds_0"), "foo_db", mock(), createDataSourceMap(), Collections.emptyList());
         RouteContext routeContext = new RouteContext();
         engine.route(routeContext, singleRule);
         List<RouteUnit> routeUnits = new ArrayList<>(routeContext.getRouteUnits());
@@ -132,7 +128,7 @@ class SingleRouteEngineTest {
     private Map<String, DataSource> createDataSourceMap() throws SQLException {
         Map<String, DataSource> result = new HashMap<>(2, 1F);
         Connection connection = mock(Connection.class, RETURNS_DEEP_STUBS);
-        when(connection.getMetaData().getURL()).thenReturn("jdbc:h2:mem:db");
+        when(connection.getMetaData().getURL()).thenReturn("jdbc:mock://127.0.0.1/db");
         result.put("ds_0", new MockedDataSource(connection));
         result.put("ds_1", new MockedDataSource(connection));
         return result;
@@ -140,22 +136,20 @@ class SingleRouteEngineTest {
     
     @Test
     void assertRouteDuplicateSingleTable() {
-        SingleRouteEngine engine =
-                new SingleRouteEngine(Collections.singleton(new QualifiedTable("foo_db", "t_order")), mockStatement(false), mock(HintValueContext.class));
+        SingleRouteEngine engine = new SingleRouteEngine(Collections.singleton(new QualifiedTable("foo_db", "t_order")), mockStatement(false), mock(HintValueContext.class));
         assertThrows(TableExistsException.class, () -> engine.route(new RouteContext(), mockSingleRule()));
     }
     
     @Test
     void assertRouteIfNotExistsDuplicateSingleTable() {
-        SingleRouteEngine engine =
-                new SingleRouteEngine(Collections.singleton(new QualifiedTable("foo_db", "t_order")), mockStatement(true), mock(HintValueContext.class));
+        SingleRouteEngine engine = new SingleRouteEngine(Collections.singleton(new QualifiedTable("foo_db", "t_order")), mockStatement(true), mock(HintValueContext.class));
         assertDoesNotThrow(() -> engine.route(new RouteContext(), mockSingleRule()));
     }
     
     private SQLStatement mockStatement(final boolean ifNotExists) {
-        MySQLCreateTableStatement result = new MySQLCreateTableStatement();
-        result.setIfNotExists(ifNotExists);
-        result.setTable(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
+        CreateTableStatement result = mock(CreateTableStatement.class);
+        when(result.isIfNotExists()).thenReturn(ifNotExists);
+        when(result.getTable()).thenReturn(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
         return result;
     }
     

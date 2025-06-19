@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreatePublicationStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL create publication statement.
+ * Create publication statement for PostgreSQL.
  */
-public final class PostgreSQLCreatePublicationStatement extends CreatePublicationStatement implements PostgreSQLStatement {
+public final class PostgreSQLCreatePublicationStatement extends AbstractSQLStatement implements DDLStatement {
 }

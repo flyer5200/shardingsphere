@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterRoutineStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL alter routine statement.
+ * Alter routine statement for PostgreSQL.
  */
-public final class PostgreSQLAlterRoutineStatement extends AlterRoutineStatement implements PostgreSQLStatement {
+public final class PostgreSQLAlterRoutineStatement extends AbstractSQLStatement implements DDLStatement {
 }

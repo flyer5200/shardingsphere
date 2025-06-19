@@ -18,29 +18,34 @@
 package org.apache.shardingsphere.sql.parser.statement.core.statement.dal;
 
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dal.FromDatabaseSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.FromDatabaseAvailable;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.TableAvailable;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 
 /**
  * Show index statement.
  */
-@Setter
-public abstract class ShowIndexStatement extends AbstractSQLStatement implements DALStatement {
+@RequiredArgsConstructor
+@Getter
+public final class ShowIndexStatement extends AbstractSQLStatement implements DALStatement, TableAvailable, FromDatabaseAvailable {
     
-    @Getter
-    private SimpleTableSegment table;
+    private final SimpleTableSegment table;
     
-    private FromDatabaseSegment fromDatabase;
+    private final FromDatabaseSegment fromDatabase;
     
-    /**
-     * Get from database.
-     *
-     * @return from database
-     */
+    @Override
+    public Collection<SimpleTableSegment> getTables() {
+        return Collections.singleton(table);
+    }
+    
+    @Override
     public Optional<FromDatabaseSegment> getFromDatabase() {
         return Optional.ofNullable(fromDatabase);
     }

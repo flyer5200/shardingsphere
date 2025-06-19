@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.sqlserver.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateServiceStatement;
-import org.apache.shardingsphere.sql.parser.statement.sqlserver.SQLServerStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * SQLServer create service statement.
+ * Create service statement for SQLServer.
  */
-public final class SQLServerCreateServiceStatement extends CreateServiceStatement implements SQLServerStatement {
+public final class SQLServerCreateServiceStatement extends AbstractSQLStatement implements DDLStatement {
 }

@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterIndexTypeStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle alter index type statement.
+ * Alter index type statement for Oracle.
  */
-public final class OracleAlterIndexTypeStatement extends AlterIndexTypeStatement implements OracleStatement {
+public final class OracleAlterIndexTypeStatement extends AbstractSQLStatement implements DDLStatement {
 }

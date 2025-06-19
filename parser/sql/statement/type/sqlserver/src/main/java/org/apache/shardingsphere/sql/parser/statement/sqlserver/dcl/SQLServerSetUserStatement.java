@@ -17,11 +17,18 @@
 
 package org.apache.shardingsphere.sql.parser.statement.sqlserver.dcl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.SetUserStatement;
-import org.apache.shardingsphere.sql.parser.statement.sqlserver.SQLServerStatement;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.dcl.UserSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.DCLStatement;
 
 /**
- * SQLServer set user statement.
+ * Set user statement for SQLServer.
  */
-public final class SQLServerSetUserStatement extends SetUserStatement implements SQLServerStatement {
+@RequiredArgsConstructor
+@Getter
+public final class SQLServerSetUserStatement extends AbstractSQLStatement implements DCLStatement {
+    
+    private final UserSegment user;
 }

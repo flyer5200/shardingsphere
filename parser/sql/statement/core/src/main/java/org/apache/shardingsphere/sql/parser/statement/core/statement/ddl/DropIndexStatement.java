@@ -18,6 +18,7 @@
 package org.apache.shardingsphere.sql.parser.statement.core.statement.ddl;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.index.IndexSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.table.AlgorithmTypeSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.table.LockTableSegment;
@@ -32,9 +33,18 @@ import java.util.Optional;
  * Drop index statement.
  */
 @Getter
-public abstract class DropIndexStatement extends AbstractSQLStatement implements DDLStatement {
+@Setter
+public final class DropIndexStatement extends AbstractSQLStatement implements DDLStatement {
     
     private final Collection<IndexSegment> indexes = new LinkedList<>();
+    
+    private boolean ifExists;
+    
+    private SimpleTableSegment simpleTable;
+    
+    private AlgorithmTypeSegment algorithmType;
+    
+    private LockTableSegment lockTable;
     
     /**
      * Get simple table.
@@ -42,32 +52,7 @@ public abstract class DropIndexStatement extends AbstractSQLStatement implements
      * @return simple table
      */
     public Optional<SimpleTableSegment> getSimpleTable() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set simple table.
-     *
-     * @param simpleTableSegment simple table
-     */
-    public void setSimpleTable(final SimpleTableSegment simpleTableSegment) {
-    }
-    
-    /**
-     * Judge whether contains exist clause or not.
-     *
-     * @return whether contains exist clause or not
-     */
-    public boolean isIfExists() {
-        return false;
-    }
-    
-    /**
-     * Set if exists or not.
-     *
-     * @param ifExists if exists or not
-     */
-    public void setIfExists(final boolean ifExists) {
+        return Optional.ofNullable(simpleTable);
     }
     
     /**
@@ -76,15 +61,7 @@ public abstract class DropIndexStatement extends AbstractSQLStatement implements
      * @return algorithm type
      */
     public Optional<AlgorithmTypeSegment> getAlgorithmType() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set algorithm type.
-     *
-     * @param algorithmTypeSegment algorithm type
-     */
-    public void setAlgorithmType(final AlgorithmTypeSegment algorithmTypeSegment) {
+        return Optional.ofNullable(algorithmType);
     }
     
     /**
@@ -93,14 +70,6 @@ public abstract class DropIndexStatement extends AbstractSQLStatement implements
      * @return lock table segment
      */
     public Optional<LockTableSegment> getLockTable() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set lock table segment.
-     *
-     * @param lockTableSegment lock table segment
-     */
-    public void setLockTable(final LockTableSegment lockTableSegment) {
+        return Optional.ofNullable(lockTable);
     }
 }

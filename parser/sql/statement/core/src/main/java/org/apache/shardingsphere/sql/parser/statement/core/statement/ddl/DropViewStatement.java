@@ -18,8 +18,10 @@
 package org.apache.shardingsphere.sql.parser.statement.core.statement.ddl;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.TableAvailable;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -28,24 +30,15 @@ import java.util.LinkedList;
  * Drop view statement.
  */
 @Getter
-public abstract class DropViewStatement extends AbstractSQLStatement implements DDLStatement {
+@Setter
+public final class DropViewStatement extends AbstractSQLStatement implements DDLStatement, TableAvailable {
     
     private final Collection<SimpleTableSegment> views = new LinkedList<>();
     
-    /**
-     * Set if exists.
-     *
-     * @param ifExists if exists or not
-     */
-    public void setIfExists(final boolean ifExists) {
-    }
+    private boolean ifExists;
     
-    /**
-     * Judge whether contains if exists.
-     *
-     * @return contains contains if exists or not
-     */
-    public boolean isIfExists() {
-        return false;
+    @Override
+    public Collection<SimpleTableSegment> getTables() {
+        return views;
     }
 }

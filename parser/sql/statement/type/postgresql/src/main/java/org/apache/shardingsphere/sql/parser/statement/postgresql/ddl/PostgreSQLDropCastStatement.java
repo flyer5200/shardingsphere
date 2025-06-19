@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropCastStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL drop cast statement.
+ * Drop cast statement for PostgreSQL.
  */
-public final class PostgreSQLDropCastStatement extends DropCastStatement implements PostgreSQLStatement {
+public final class PostgreSQLDropCastStatement extends AbstractSQLStatement implements DDLStatement {
 }

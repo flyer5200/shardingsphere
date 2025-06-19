@@ -37,8 +37,7 @@ class SaneQueryResultEngineTest {
     @Test
     void assertGetSaneQueryResultForSelectStatement() {
         SaneQueryResultEngine saneQueryResultEngine = new SaneQueryResultEngine(TypedSPILoader.getService(DatabaseType.class, "FIXTURE"));
-        Optional<ExecuteResult> actual = saneQueryResultEngine.getSaneQueryResult(new SelectStatement() {
-        }, null);
+        Optional<ExecuteResult> actual = saneQueryResultEngine.getSaneQueryResult(new SelectStatement(), null);
         assertTrue(actual.isPresent());
         assertThat(actual.get(), instanceOf(RawMemoryQueryResult.class));
         RawMemoryQueryResult actualResult = (RawMemoryQueryResult) actual.get();

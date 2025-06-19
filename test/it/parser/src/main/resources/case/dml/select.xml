@@ -182,7 +182,7 @@
                         <from>
                             <simple-table name="t1" start-index="29" stop-index="30" />
                         </from>
-                        <combine combine-type="EXCEPT" start-index="32" stop-index="58">
+                        <combine combine-type="EXCEPT_ALL" start-index="15" stop-index="58">
                             <left>
                                 <projections start-index="22" stop-index="22">
                                     <shorthand-projection start-index="22" stop-index="22" />
@@ -499,6 +499,9 @@
                         <parameter>
                             <common-expression start-index="15" stop-index="45" text="TIMESTAMP&quot;2004-01-22 21:45:33&quot;" />
                         </parameter>
+                        <parameter start-index="53" stop-index="58">
+                            <literal-expression value="latin1" start-index="53" stop-index="58"/>
+                        </parameter>
                     </function>
                 </expr>
             </expression-projection>
@@ -512,6 +515,9 @@
                     <function start-index="7" stop-index="57" text="CONVERT(TIMESTAMP &quot;2004-01-22 21:45:33&quot;, BINARY(4))" function-name="CONVERT" >
                         <parameter>
                             <common-expression start-index="15" stop-index="45" text="TIMESTAMP&quot;2004-01-22 21:45:33&quot;" function-name="GROUPING(f1)" />
+                        </parameter>
+                        <parameter start-index="48" stop-index="56">
+                            <data-type value="BINARY" start-index="48" stop-index="56"/>
                         </parameter>
                     </function>
                 </expr>
@@ -527,6 +533,9 @@
                         <parameter>
                             <common-expression start-index="15" stop-index="45" text="TIMESTAMP&quot;2004-01-22 21:45:33&quot;" />
                         </parameter>
+                        <parameter start-index="48" stop-index="54">
+                            <data-type value="CHAR" start-index="48" stop-index="54"/>
+                        </parameter>
                     </function>
                 </expr>
             </expression-projection>
@@ -540,6 +549,9 @@
                     <function start-index="7" stop-index="52" text="CONVERT(TIMESTAMP &quot;2004-01-22 21:45:33&quot;, CHAR)" function-name="CONVERT">
                         <parameter>
                             <common-expression start-index="15" stop-index="45" text="TIMESTAMP&quot;2004-01-22 21:45:33&quot;" />
+                        </parameter>
+                        <parameter start-index="48" stop-index="51">
+                            <data-type value="CHAR" start-index="48" stop-index="51"/>
                         </parameter>
                     </function>
                 </expr>
@@ -3879,6 +3891,9 @@
                                     <literal-expression value="5" start-index="34" stop-index="34" />
                                 </parameter>
                             </function>
+                        </parameter>
+                        <parameter start-index="39" stop-index="44">
+                            <data-type value="SIGNED" start-index="39" stop-index="44"/>
                         </parameter>
                     </function>
                 </expr>
@@ -10159,5 +10174,70 @@
                 </binary-operation-expression>
             </expr>
         </where>
+    </select>
+    
+    <select sql-case-id="select_match_against">
+        <projections start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7">
+                <actual-projections start-index="0" stop-index="0"/>
+            </shorthand-projection>
+        </projections>
+        <from start-index="14" stop-index="20">
+            <simple-table name="t_order" start-index="14" stop-index="20"/>
+        </from>
+        <where start-index="22" stop-index="62">
+            <expr start-index="28" stop-index="62">
+                <match-expression start-index="28" stop-index="62">
+                    <expr start-index="49" stop-index="61">
+                        <literal-expression value="15111111111" start-index="49" stop-index="61"/>
+                    </expr>
+                </match-expression>
+            </expr>
+        </where>
+    </select>
+
+    <select sql-case-id="select_with_oracle_v1_keyword">
+        <projections start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7">
+                <actual-projections start-index="0" stop-index="0"/>
+            </shorthand-projection>
+        </projections>
+        <from start-index="14" stop-index="20">
+            <simple-table alias="v1" name="dual" start-index="14" stop-index="20"/>
+        </from>
+    </select>
+
+    
+    <select sql-case-id="select_in_literal">
+        <projections start-index="7" stop-index="7">
+            <shorthand-projection start-index="7" stop-index="7">
+                <actual-projections start-index="0" stop-index="0"/>
+            </shorthand-projection>
+        </projections>
+        <from start-index="14" stop-index="20">
+            <simple-table name="t_order" start-index="14" stop-index="20"/>
+        </from>
+        <where start-index="22" stop-index="45">
+            <expr start-index="28" stop-index="45">
+                <in-expression start-index="28" stop-index="45">
+                    <not>false</not>
+                    <left start-index="28" stop-index="35">
+                        <column name="ORDER_ID" start-index="28" stop-index="35">
+                        </column>
+                    </left>
+                    <right start-index="40" stop-index="45">
+                        <literal-expression value="test" start-index="40" stop-index="45"/>
+                    </right>
+                </in-expression>
+            </expr>
+        </where>
+    </select>
+    <select sql-case-id="select_system_table_firebird">
+        <projections start-index="7" stop-index="18">
+            <column-projection owner="" name="RDB$MAP_NAME" start-index="7" stop-index="18"/>
+        </projections>
+        <from>
+            <simple-table name="RDB$AUTH_MAPPING" start-index="25" stop-index="40"/>
+        </from>
     </select>
 </sql-parser-test-cases>

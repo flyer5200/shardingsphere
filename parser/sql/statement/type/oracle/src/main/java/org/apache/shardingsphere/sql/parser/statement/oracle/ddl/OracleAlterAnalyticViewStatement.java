@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterAnalyticViewStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle alter analytic view statement.
+ * Alter analytic view statement for Oracle.
  */
-public final class OracleAlterAnalyticViewStatement extends AlterAnalyticViewStatement implements OracleStatement {
+public final class OracleAlterAnalyticViewStatement extends AbstractSQLStatement implements DDLStatement {
 }

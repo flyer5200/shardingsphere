@@ -18,8 +18,10 @@
 package org.apache.shardingsphere.sql.parser.statement.core.statement.ddl;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.TableAvailable;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -28,41 +30,12 @@ import java.util.LinkedList;
  * Drop table statement.
  */
 @Getter
-public abstract class DropTableStatement extends AbstractSQLStatement implements DDLStatement {
+@Setter
+public final class DropTableStatement extends AbstractSQLStatement implements DDLStatement, TableAvailable {
     
     private final Collection<SimpleTableSegment> tables = new LinkedList<>();
     
-    /**
-     * Set if exists.
-     *
-     * @param ifExists if exists or not
-     */
-    public void setIfExists(final boolean ifExists) {
-    }
+    private boolean ifExists;
     
-    /**
-     * Judge whether contains if exists.
-     *
-     * @return contains contains if exists or not
-     */
-    public boolean isIfExists() {
-        return false;
-    }
-    
-    /**
-     * Set contains cascade.
-     *
-     * @param containsCascade contains cascade or not
-     */
-    public void setContainsCascade(final boolean containsCascade) {
-    }
-    
-    /**
-     * Judge whether contains cascade.
-     *
-     * @return contains cascade or not
-     */
-    public boolean isContainsCascade() {
-        return false;
-    }
+    private boolean containsCascade;
 }

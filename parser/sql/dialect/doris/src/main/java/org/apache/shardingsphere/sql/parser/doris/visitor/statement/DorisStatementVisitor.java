@@ -46,7 +46,6 @@ import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.Collate
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.ColumnNameContext;
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.ColumnNamesContext;
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.ColumnRefContext;
-import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.CombineClauseContext;
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.CompleteRegularFunctionContext;
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.ConstraintNameContext;
 import org.apache.shardingsphere.sql.parser.autogen.DorisStatementParser.ConvertFunctionContext;
@@ -228,6 +227,10 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SubqueryTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.DeleteStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.InsertStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.UpdateStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.util.SQLUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.value.collection.CollectionValue;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
@@ -237,10 +240,6 @@ import org.apache.shardingsphere.sql.parser.statement.core.value.literal.impl.Nu
 import org.apache.shardingsphere.sql.parser.statement.core.value.literal.impl.OtherLiteralValue;
 import org.apache.shardingsphere.sql.parser.statement.core.value.literal.impl.StringLiteralValue;
 import org.apache.shardingsphere.sql.parser.statement.core.value.parametermarker.ParameterMarkerValue;
-import org.apache.shardingsphere.sql.parser.statement.doris.dml.DorisDeleteStatement;
-import org.apache.shardingsphere.sql.parser.statement.doris.dml.DorisInsertStatement;
-import org.apache.shardingsphere.sql.parser.statement.doris.dml.DorisSelectStatement;
-import org.apache.shardingsphere.sql.parser.statement.doris.dml.DorisUpdateStatement;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -500,7 +499,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
             right = (ExpressionSegment) visit(ctx.predicate());
         } else {
             right = new SubqueryExpressionSegment(
-                    new SubquerySegment(ctx.subquery().start.getStartIndex(), ctx.subquery().stop.getStopIndex(), (DorisSelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
+                    new SubquerySegment(ctx.subquery().start.getStartIndex(), ctx.subquery().stop.getStopIndex(), (SelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
         }
         String operator = null == ctx.SAFE_EQ_() ? ctx.comparisonOperator().getText() : ctx.SAFE_EQ_().getText();
         String text = ctx.start.getInputStream().getText(new Interval(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
@@ -533,7 +532,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         ExpressionSegment right;
         if (null != ctx.subquery()) {
             right = new SubqueryExpressionSegment(
-                    new SubquerySegment(ctx.subquery().start.getStartIndex(), ctx.subquery().stop.getStopIndex(), (DorisSelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
+                    new SubquerySegment(ctx.subquery().start.getStartIndex(), ctx.subquery().stop.getStopIndex(), (SelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
         } else {
             right = new ListExpression(ctx.LP_().getSymbol().getStartIndex(), ctx.RP_().getSymbol().getStopIndex());
             for (ExprContext each : ctx.expr()) {
@@ -604,7 +603,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         int stopIndex = ctx.stop.getStopIndex();
         if (null != ctx.subquery()) {
             SubquerySegment subquerySegment = new SubquerySegment(
-                    ctx.subquery().getStart().getStartIndex(), ctx.subquery().getStop().getStopIndex(), (DorisSelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery()));
+                    ctx.subquery().getStart().getStartIndex(), ctx.subquery().getStop().getStopIndex(), (SelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery()));
             if (null == ctx.EXISTS()) {
                 return new SubqueryExpressionSegment(subquerySegment);
             }
@@ -689,11 +688,11 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         if (null != ctx.queryExpressionParens()) {
             return visit(ctx.queryExpressionParens());
         }
-        DorisSelectStatement result = (DorisSelectStatement) visit(ctx.queryExpression());
+        SelectStatement result = (SelectStatement) visit(ctx.queryExpression());
         if (null != ctx.lockClauseList()) {
             result.setLock((LockSegment) visit(ctx.lockClauseList()));
         }
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
@@ -710,11 +709,11 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitQueryExpression(final QueryExpressionContext ctx) {
-        DorisSelectStatement result;
+        SelectStatement result;
         if (null != ctx.queryExpressionBody()) {
-            result = (DorisSelectStatement) visit(ctx.queryExpressionBody());
+            result = (SelectStatement) visit(ctx.queryExpressionBody());
         } else {
-            result = (DorisSelectStatement) visit(ctx.queryExpressionParens());
+            result = (SelectStatement) visit(ctx.queryExpressionParens());
         }
         if (null != ctx.orderByClause()) {
             result.setOrderBy((OrderBySegment) visit(ctx.orderByClause()));
@@ -723,7 +722,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
             result.setLimit((LimitSegment) visit(ctx.limitClause()));
         }
         if (null != result && null != ctx.withClause()) {
-            result.setWithSegment((WithSegment) visit(ctx.withClause()));
+            result.setWith((WithSegment) visit(ctx.withClause()));
         }
         return result;
     }
@@ -733,7 +732,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         if (null != ctx.selectWithInto()) {
             return visit(ctx.selectWithInto());
         }
-        DorisSelectStatement result = (DorisSelectStatement) visit(ctx.queryExpression());
+        SelectStatement result = (SelectStatement) visit(ctx.queryExpression());
         if (null != ctx.lockClauseList()) {
             result.setLock((LockSegment) visit(ctx.lockClauseList()));
         }
@@ -753,7 +752,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     @Override
     public ASTNode visitCteClause(final CteClauseContext ctx) {
         CommonTableExpressionSegment result = new CommonTableExpressionSegment(ctx.getStart().getStartIndex(), ctx.getStop().getStopIndex(), (AliasSegment) visit(ctx.alias()),
-                new SubquerySegment(ctx.getStart().getStartIndex(), ctx.getStop().getStopIndex(), (DorisSelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
+                new SubquerySegment(ctx.getStart().getStartIndex(), ctx.getStop().getStopIndex(), (SelectStatement) visit(ctx.subquery()), getOriginalText(ctx.subquery())));
         if (null != ctx.columnNames()) {
             CollectionValue<ColumnSegment> columns = (CollectionValue<ColumnSegment>) visit(ctx.columnNames());
             result.getColumns().addAll(columns.getValue());
@@ -766,46 +765,35 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         if (1 == ctx.getChildCount() && ctx.getChild(0) instanceof QueryPrimaryContext) {
             return visit(ctx.queryPrimary());
         }
-        if (null != ctx.queryExpressionBody()) {
-            DorisSelectStatement result = new DorisSelectStatement();
-            SubquerySegment left = new SubquerySegment(ctx.queryExpressionBody().start.getStartIndex(), ctx.queryExpressionBody().stop.getStopIndex(),
-                    (DorisSelectStatement) visit(ctx.queryExpressionBody()), getOriginalText(ctx.queryExpressionBody()));
+        if (null != ctx.queryExpressionBody() && ctx.queryExpressionBody().size() > 1) {
+            SelectStatement result = new SelectStatement();
+            SubquerySegment left = new SubquerySegment(ctx.queryExpressionBody(0).start.getStartIndex(), ctx.queryExpressionBody(0).stop.getStopIndex(),
+                    (SelectStatement) visit(ctx.queryExpressionBody(0)), getOriginalText(ctx.queryExpressionBody(0)));
             result.setProjections(left.getSelect().getProjections());
             left.getSelect().getFrom().ifPresent(result::setFrom);
-            ((DorisSelectStatement) left.getSelect()).getTable().ifPresent(result::setTable);
-            result.setCombine(createCombineSegment(ctx.combineClause(), left));
-            return result;
-        }
-        if (null != ctx.queryExpressionParens()) {
-            DorisSelectStatement result = new DorisSelectStatement();
-            SubquerySegment left = new SubquerySegment(ctx.queryExpressionParens().start.getStartIndex(), ctx.queryExpressionParens().stop.getStopIndex(),
-                    (DorisSelectStatement) visit(ctx.queryExpressionParens()), getOriginalText(ctx.queryExpressionParens()));
-            result.setProjections(left.getSelect().getProjections());
-            left.getSelect().getFrom().ifPresent(result::setFrom);
-            ((DorisSelectStatement) left.getSelect()).getTable().ifPresent(result::setTable);
-            result.setCombine(createCombineSegment(ctx.combineClause(), left));
+            result.setCombine(createCombineSegment(ctx, left));
             return result;
         }
         return visit(ctx.queryExpressionParens());
     }
     
-    private CombineSegment createCombineSegment(final CombineClauseContext ctx, final SubquerySegment left) {
+    private CombineSegment createCombineSegment(final QueryExpressionBodyContext ctx, final SubquerySegment left) {
         CombineType combineType;
         if (null != ctx.EXCEPT()) {
-            combineType = CombineType.EXCEPT;
+            combineType = null == ctx.combineOption() || null == ctx.combineOption().ALL() ? CombineType.EXCEPT : CombineType.EXCEPT_ALL;
         } else if (null != ctx.INTERSECT()) {
-            combineType = CombineType.INTERSECT;
+            combineType = null == ctx.combineOption() || null == ctx.combineOption().ALL() ? CombineType.INTERSECT : CombineType.INTERSECT_ALL;
         } else {
             combineType = null == ctx.combineOption() || null == ctx.combineOption().ALL() ? CombineType.UNION : CombineType.UNION_ALL;
         }
-        ParserRuleContext ruleContext = null == ctx.queryPrimary() ? ctx.queryExpressionParens() : ctx.queryPrimary();
-        SubquerySegment right = new SubquerySegment(ruleContext.start.getStartIndex(), ruleContext.stop.getStopIndex(), (DorisSelectStatement) visit(ruleContext), getOriginalText(ruleContext));
+        ParserRuleContext ruleContext = ctx.queryExpressionBody(1);
+        SubquerySegment right = new SubquerySegment(ruleContext.start.getStartIndex(), ruleContext.stop.getStopIndex(), (SelectStatement) visit(ruleContext), getOriginalText(ruleContext));
         return new CombineSegment(ctx.getStart().getStartIndex(), ctx.getStop().getStopIndex(), left, combineType, right);
     }
     
     @Override
     public ASTNode visitQuerySpecification(final QuerySpecificationContext ctx) {
-        DorisSelectStatement result = new DorisSelectStatement();
+        SelectStatement result = new SelectStatement();
         result.setProjections((ProjectionsSegment) visit(ctx.projections()));
         if (null != ctx.selectSpecification()) {
             result.getProjections().setDistinctRow(isDistinct(ctx));
@@ -838,7 +826,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitTableValueConstructor(final TableValueConstructorContext ctx) {
-        DorisSelectStatement result = new DorisSelectStatement();
+        SelectStatement result = new SelectStatement();
         int startIndex = ctx.getStart().getStartIndex();
         int stopIndex = ctx.getStop().getStopIndex();
         ValuesExpression valuesExpression = new ValuesExpression(startIndex, stopIndex);
@@ -858,7 +846,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitTableStatement(final TableStatementContext ctx) {
-        DorisSelectStatement result = new DorisSelectStatement();
+        SelectStatement result = new SelectStatement();
         result.setProjections(new ProjectionsSegment(ctx.start.getStartIndex(), ctx.start.getStartIndex()));
         result.getProjections().getProjections().add(new ShorthandProjectionSegment(ctx.start.getStartIndex(), ctx.start.getStartIndex()));
         result.setFrom(new SimpleTableSegment(new TableNameSegment(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), new IdentifierValue(ctx.tableName().getText()))));
@@ -1441,26 +1429,26 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     @Override
     public ASTNode visitInsert(final InsertContext ctx) {
         // TODO :FIXME, since there is no segment for insertValuesClause, InsertStatement is created by sub rule.
-        DorisInsertStatement result;
+        InsertStatement result;
         if (null != ctx.insertValuesClause()) {
-            result = (DorisInsertStatement) visit(ctx.insertValuesClause());
+            result = (InsertStatement) visit(ctx.insertValuesClause());
         } else if (null != ctx.insertSelectClause()) {
-            result = (DorisInsertStatement) visit(ctx.insertSelectClause());
+            result = (InsertStatement) visit(ctx.insertSelectClause());
         } else {
-            result = new DorisInsertStatement();
+            result = new InsertStatement();
             result.setSetAssignment((SetAssignmentSegment) visit(ctx.setAssignmentsClause()));
         }
         if (null != ctx.onDuplicateKeyClause()) {
             result.setOnDuplicateKeyColumns((OnDuplicateKeyColumnsSegment) visit(ctx.onDuplicateKeyClause()));
         }
         result.setTable((SimpleTableSegment) visit(ctx.tableName()));
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
     @Override
     public ASTNode visitInsertSelectClause(final InsertSelectClauseContext ctx) {
-        DorisInsertStatement result = new DorisInsertStatement();
+        InsertStatement result = new InsertStatement();
         result.setInsertSelect(createInsertSelectSegment(ctx));
         if (null != ctx.LP_()) {
             if (null != ctx.fields()) {
@@ -1475,14 +1463,14 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     }
     
     private SubquerySegment createInsertSelectSegment(final InsertSelectClauseContext ctx) {
-        DorisSelectStatement selectStatement = (DorisSelectStatement) visit(ctx.select());
-        selectStatement.getParameterMarkerSegments().addAll(getParameterMarkerSegments());
+        SelectStatement selectStatement = (SelectStatement) visit(ctx.select());
+        selectStatement.addParameterMarkers(getParameterMarkerSegments());
         return new SubquerySegment(ctx.select().start.getStartIndex(), ctx.select().stop.getStopIndex(), selectStatement, getOriginalText(ctx.select()));
     }
     
     @Override
     public ASTNode visitInsertValuesClause(final InsertValuesClauseContext ctx) {
-        DorisInsertStatement result = new DorisInsertStatement();
+        InsertStatement result = new InsertStatement();
         if (null != ctx.LP_()) {
             if (null != ctx.fields()) {
                 result.setInsertColumns(new InsertColumnsSegment(ctx.LP_().getSymbol().getStartIndex(), ctx.RP_().getSymbol().getStopIndex(), createInsertColumns(ctx.fields())));
@@ -1516,23 +1504,23 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     @Override
     public ASTNode visitReplace(final ReplaceContext ctx) {
         // TODO :FIXME, since there is no segment for replaceValuesClause, ReplaceStatement is created by sub rule.
-        DorisInsertStatement result;
+        InsertStatement result;
         if (null != ctx.replaceValuesClause()) {
-            result = (DorisInsertStatement) visit(ctx.replaceValuesClause());
+            result = (InsertStatement) visit(ctx.replaceValuesClause());
         } else if (null != ctx.replaceSelectClause()) {
-            result = (DorisInsertStatement) visit(ctx.replaceSelectClause());
+            result = (InsertStatement) visit(ctx.replaceSelectClause());
         } else {
-            result = new DorisInsertStatement();
+            result = new InsertStatement();
             result.setSetAssignment((SetAssignmentSegment) visit(ctx.setAssignmentsClause()));
         }
         result.setTable((SimpleTableSegment) visit(ctx.tableName()));
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
     @Override
     public ASTNode visitReplaceSelectClause(final ReplaceSelectClauseContext ctx) {
-        DorisInsertStatement result = new DorisInsertStatement();
+        InsertStatement result = new InsertStatement();
         if (null != ctx.LP_()) {
             if (null != ctx.fields()) {
                 result.setInsertColumns(new InsertColumnsSegment(ctx.LP_().getSymbol().getStartIndex(), ctx.RP_().getSymbol().getStopIndex(), createInsertColumns(ctx.fields())));
@@ -1547,13 +1535,13 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     }
     
     private SubquerySegment createReplaceSelectSegment(final ReplaceSelectClauseContext ctx) {
-        DorisSelectStatement selectStatement = (DorisSelectStatement) visit(ctx.select());
+        SelectStatement selectStatement = (SelectStatement) visit(ctx.select());
         return new SubquerySegment(ctx.select().start.getStartIndex(), ctx.select().stop.getStopIndex(), selectStatement, getOriginalText(ctx.select()));
     }
     
     @Override
     public ASTNode visitReplaceValuesClause(final ReplaceValuesClauseContext ctx) {
-        DorisInsertStatement result = new DorisInsertStatement();
+        InsertStatement result = new InsertStatement();
         if (null != ctx.LP_()) {
             if (null != ctx.fields()) {
                 result.setInsertColumns(new InsertColumnsSegment(ctx.LP_().getSymbol().getStartIndex(), ctx.RP_().getSymbol().getStopIndex(), createInsertColumns(ctx.fields())));
@@ -1577,7 +1565,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitUpdate(final UpdateContext ctx) {
-        DorisUpdateStatement result = new DorisUpdateStatement();
+        UpdateStatement result = new UpdateStatement();
         TableSegment tableSegment = (TableSegment) visit(ctx.tableReferences());
         result.setTable(tableSegment);
         result.setSetAssignment((SetAssignmentSegment) visit(ctx.setAssignmentsClause()));
@@ -1590,7 +1578,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         if (null != ctx.limitClause()) {
             result.setLimit((LimitSegment) visit(ctx.limitClause()));
         }
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
@@ -1642,7 +1630,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitDelete(final DeleteContext ctx) {
-        DorisDeleteStatement result = new DorisDeleteStatement();
+        DeleteStatement result = new DeleteStatement();
         if (null != ctx.multipleTablesClause()) {
             result.setTable((TableSegment) visit(ctx.multipleTablesClause()));
         } else {
@@ -1657,7 +1645,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
         if (null != ctx.limitClause()) {
             result.setLimit((LimitSegment) visit(ctx.limitClause()));
         }
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
@@ -1689,18 +1677,18 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     
     @Override
     public ASTNode visitSelect(final SelectContext ctx) {
-        DorisSelectStatement result;
+        SelectStatement result;
         if (null != ctx.queryExpression()) {
-            result = (DorisSelectStatement) visit(ctx.queryExpression());
+            result = (SelectStatement) visit(ctx.queryExpression());
             if (null != ctx.lockClauseList()) {
                 result.setLock((LockSegment) visit(ctx.lockClauseList()));
             }
         } else if (null != ctx.selectWithInto()) {
-            result = (DorisSelectStatement) visit(ctx.selectWithInto());
+            result = (SelectStatement) visit(ctx.selectWithInto());
         } else {
-            result = (DorisSelectStatement) visit(ctx.getChild(0));
+            result = (SelectStatement) visit(ctx.getChild(0));
         }
-        result.addParameterMarkerSegments(getParameterMarkerSegments());
+        result.addParameterMarkers(getParameterMarkerSegments());
         return result;
     }
     
@@ -1914,7 +1902,7 @@ public abstract class DorisStatementVisitor extends DorisStatementBaseVisitor<AS
     @Override
     public ASTNode visitTableFactor(final TableFactorContext ctx) {
         if (null != ctx.subquery()) {
-            DorisSelectStatement subquery = (DorisSelectStatement) visit(ctx.subquery());
+            SelectStatement subquery = (SelectStatement) visit(ctx.subquery());
             SubquerySegment subquerySegment = new SubquerySegment(ctx.subquery().start.getStartIndex(), ctx.subquery().stop.getStopIndex(), subquery, getOriginalText(ctx.subquery()));
             SubqueryTableSegment result = new SubqueryTableSegment(ctx.start.getStartIndex(), ctx.stop.getStopIndex(), subquerySegment);
             if (null != ctx.alias()) {

@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateControlFileStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle create control file statement.
+ * Create control file statement for Oracle.
  */
-public class OracleCreateControlFileStatement extends CreateControlFileStatement implements OracleStatement {
+public final class OracleCreateControlFileStatement extends AbstractSQLStatement implements DDLStatement {
 }

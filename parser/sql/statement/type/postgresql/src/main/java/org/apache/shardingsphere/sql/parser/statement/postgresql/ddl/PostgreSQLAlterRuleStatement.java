@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterRuleStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL alter rule statement.
+ * Alter rule statement for PostgreSQL.
  */
-public final class PostgreSQLAlterRuleStatement extends AlterRuleStatement implements PostgreSQLStatement {
+public final class PostgreSQLAlterRuleStatement extends AbstractSQLStatement implements DDLStatement {
 }

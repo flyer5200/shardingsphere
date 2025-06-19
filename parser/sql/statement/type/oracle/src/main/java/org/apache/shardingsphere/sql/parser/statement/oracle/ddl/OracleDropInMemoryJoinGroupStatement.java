@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropInMemoryJoinGroupStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle drop in memory join group statement.
+ * Drop in memory join group statement for Oracle.
  */
-public final class OracleDropInMemoryJoinGroupStatement extends DropInMemoryJoinGroupStatement implements OracleStatement {
+public final class OracleDropInMemoryJoinGroupStatement extends AbstractSQLStatement implements DDLStatement {
 }

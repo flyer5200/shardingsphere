@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropProfileStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle drop profile statement.
+ * Drop profile statement for Oracle.
  */
-public final class OracleDropProfileStatement extends DropProfileStatement implements OracleStatement {
+public final class OracleDropProfileStatement extends AbstractSQLStatement implements DDLStatement {
 }

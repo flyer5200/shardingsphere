@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterInMemoryJoinGroupStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle alter in memory join group statement.
+ * Alter in memory join group statement for Oracle.
  */
-public final class OracleAlterInMemoryJoinGroupStatement extends AlterInMemoryJoinGroupStatement implements OracleStatement {
+public final class OracleAlterInMemoryJoinGroupStatement extends AbstractSQLStatement implements DDLStatement {
 }

@@ -17,15 +17,17 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.dal;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ResetParameterStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.DALStatement;
 
 /**
- * PostgreSQL reset parameter statement.
+ * Reset parameter statement for PostgreSQL.
  */
-public final class PostgreSQLResetParameterStatement extends ResetParameterStatement implements PostgreSQLStatement {
+@RequiredArgsConstructor
+@Getter
+public final class PostgreSQLResetParameterStatement extends AbstractSQLStatement implements DALStatement {
     
-    public PostgreSQLResetParameterStatement(final String configurationParam) {
-        super(configurationParam);
-    }
+    private final String configurationParameter;
 }

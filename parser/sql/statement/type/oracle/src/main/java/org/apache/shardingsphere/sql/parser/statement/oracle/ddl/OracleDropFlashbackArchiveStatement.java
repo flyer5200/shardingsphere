@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropFlashbackArchiveStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Drop flashback archive statement.
+ * Drop flashback archive statement for Oracle.
  */
-public class OracleDropFlashbackArchiveStatement extends DropFlashbackArchiveStatement implements OracleStatement {
+public final class OracleDropFlashbackArchiveStatement extends AbstractSQLStatement implements DDLStatement {
 }

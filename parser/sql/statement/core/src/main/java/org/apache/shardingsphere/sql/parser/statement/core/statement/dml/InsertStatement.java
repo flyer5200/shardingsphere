@@ -37,6 +37,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.Outpu
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.available.WithAvailable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,13 +49,37 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class InsertStatement extends AbstractSQLStatement implements DMLStatement {
+public final class InsertStatement extends AbstractSQLStatement implements DMLStatement, WithAvailable {
     
     private SimpleTableSegment table;
     
     private InsertColumnsSegment insertColumns;
     
     private SubquerySegment insertSelect;
+    
+    private SetAssignmentSegment setAssignment;
+    
+    private OnDuplicateKeyColumnsSegment onDuplicateKeyColumns;
+    
+    private ReturningSegment returning;
+    
+    private OutputSegment output;
+    
+    private WithSegment with;
+    
+    private MultiTableInsertType multiTableInsertType;
+    
+    private MultiTableInsertIntoSegment multiTableInsertInto;
+    
+    private MultiTableConditionalIntoSegment multiTableConditionalInto;
+    
+    private WhereSegment where;
+    
+    private ExecSegment exec;
+    
+    private WithTableHintSegment withTableHint;
+    
+    private FunctionSegment rowSetFunction;
     
     private final Collection<InsertValuesSegment> values = new LinkedList<>();
     
@@ -63,16 +88,16 @@ public abstract class InsertStatement extends AbstractSQLStatement implements DM
     /**
      * Get table.
      *
-     * @return simple table segment
+     * @return table
      */
     public Optional<SimpleTableSegment> getTable() {
         return Optional.ofNullable(table);
     }
     
     /**
-     * Get insert columns segment.
+     * Get insert columns.
      *
-     * @return insert columns segment
+     * @return insert columns
      */
     public Optional<InsertColumnsSegment> getInsertColumns() {
         return Optional.ofNullable(insertColumns);
@@ -88,80 +113,39 @@ public abstract class InsertStatement extends AbstractSQLStatement implements DM
     }
     
     /**
-     * Get insert select segment.
+     * Get insert select.
      *
-     * @return insert select segment
+     * @return insert select
      */
     public Optional<SubquerySegment> getInsertSelect() {
         return Optional.ofNullable(insertSelect);
     }
     
     /**
-     * Get On duplicate key columns segment.
+     * Get On duplicate key columns.
      *
-     * @return on duplicate key columns segment
+     * @return on duplicate key columns
      */
     public Optional<OnDuplicateKeyColumnsSegment> getOnDuplicateKeyColumns() {
-        return Optional.empty();
+        return Optional.ofNullable(onDuplicateKeyColumns);
     }
     
     /**
-     * Set on duplicate key columns segment.
+     * Get set assignment.
      *
-     * @param onDuplicateKeyColumns on duplicate key columns segment
-     */
-    public void setOnDuplicateKeyColumns(final OnDuplicateKeyColumnsSegment onDuplicateKeyColumns) {
-    }
-    
-    /**
-     * Get set assignment segment.
-     *
-     * @return set assignment segment
+     * @return set assignment
      */
     public Optional<SetAssignmentSegment> getSetAssignment() {
-        return Optional.empty();
+        return Optional.ofNullable(setAssignment);
     }
     
     /**
-     * Set set assignment segment.
+     * Get output.
      *
-     * @param setAssignment set assignment segment
+     * @return output
      */
-    public void setSetAssignment(final SetAssignmentSegment setAssignment) {
-    }
-    
-    /**
-     * Get with segment.
-     *
-     * @return with segment
-     */
-    public Optional<WithSegment> getWithSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set with segment.
-     *
-     * @param withSegment with segment
-     */
-    public void setWithSegment(final WithSegment withSegment) {
-    }
-    
-    /**
-     * Get output segment.
-     *
-     * @return output segment
-     */
-    public Optional<OutputSegment> getOutputSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set output segment.
-     *
-     * @param outputSegment output segment
-     */
-    public void setOutputSegment(final OutputSegment outputSegment) {
+    public Optional<OutputSegment> getOutput() {
+        return Optional.ofNullable(output);
     }
     
     /**
@@ -170,66 +154,34 @@ public abstract class InsertStatement extends AbstractSQLStatement implements DM
      * @return multi table insert type
      */
     public Optional<MultiTableInsertType> getMultiTableInsertType() {
-        return Optional.empty();
+        return Optional.ofNullable(multiTableInsertType);
     }
     
     /**
-     * Set multi table insert type.
+     * Get multi table insert into.
      *
-     * @param multiTableInsertType multi table insert type
+     * @return multi table insert into
      */
-    public void setMultiTableInsertType(final MultiTableInsertType multiTableInsertType) {
+    public Optional<MultiTableInsertIntoSegment> getMultiTableInsertInto() {
+        return Optional.ofNullable(multiTableInsertInto);
     }
     
     /**
-     * Get multi table insert into segment.
+     * Get multi table conditional into.
      *
-     * @return multi table insert into segment
+     * @return multi table conditional into
      */
-    public Optional<MultiTableInsertIntoSegment> getMultiTableInsertIntoSegment() {
-        return Optional.empty();
+    public Optional<MultiTableConditionalIntoSegment> getMultiTableConditionalInto() {
+        return Optional.ofNullable(multiTableConditionalInto);
     }
     
     /**
-     * Set multi table insert into segment.
+     * Get returning.
      *
-     * @param multiTableInsertIntoSegment multi table insert into segment
+     * @return returning
      */
-    public void setMultiTableInsertIntoSegment(final MultiTableInsertIntoSegment multiTableInsertIntoSegment) {
-    }
-    
-    /**
-     * Get multi table conditional into segment.
-     *
-     * @return multi table conditional into segment
-     */
-    public Optional<MultiTableConditionalIntoSegment> getMultiTableConditionalIntoSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set multi table conditional into segment.
-     *
-     * @param multiTableConditionalIntoSegment multi table conditional into segment
-     */
-    public void setMultiTableConditionalIntoSegment(final MultiTableConditionalIntoSegment multiTableConditionalIntoSegment) {
-    }
-    
-    /**
-     * Get returning segment of insert statement.
-     *
-     * @return returning segment
-     */
-    public Optional<ReturningSegment> getReturningSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Set returning segment of insert statement.
-     *
-     * @param returningSegment returning segment
-     */
-    public void setReturningSegment(final ReturningSegment returningSegment) {
+    public Optional<ReturningSegment> getReturning() {
+        return Optional.ofNullable(returning);
     }
     
     /**
@@ -238,49 +190,38 @@ public abstract class InsertStatement extends AbstractSQLStatement implements DM
      * @return where segment
      */
     public Optional<WhereSegment> getWhere() {
-        return Optional.empty();
+        return Optional.ofNullable(where);
     }
     
     /**
-     * Set where segment.
+     * Get execute.
      *
-     * @param whereSegment where segment
+     * @return execute
      */
-    public void setWhere(final WhereSegment whereSegment) {
+    public Optional<ExecSegment> getExec() {
+        return Optional.ofNullable(exec);
     }
     
     /**
-     * Get execute segment.
+     * Get with table hint.
      *
-     * @return execute segment
+     * @return with table hint
      */
-    public Optional<ExecSegment> getExecSegment() {
-        return Optional.empty();
+    public Optional<WithTableHintSegment> getWithTableHint() {
+        return Optional.ofNullable(withTableHint);
     }
     
     /**
-     * Set execute segment.
+     * Get row set function.
      *
-     * @param execSegment execute segment
+     * @return row set function
      */
-    public void setExecSegment(final ExecSegment execSegment) {
+    public Optional<FunctionSegment> getRowSetFunction() {
+        return Optional.ofNullable(rowSetFunction);
     }
     
-    /**
-     * Get with table hint segment.
-     *
-     * @return with table hint segment
-     */
-    public Optional<WithTableHintSegment> getWithTableHintSegment() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Get rowSet function segment.
-     *
-     * @return rowSet function segment
-     */
-    public Optional<FunctionSegment> getRowSetFunctionSegment() {
-        return Optional.empty();
+    @Override
+    public Optional<WithSegment> getWith() {
+        return Optional.ofNullable(with);
     }
 }

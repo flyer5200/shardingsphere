@@ -17,19 +17,17 @@
 
 package org.apache.shardingsphere.mode.manager.cluster.lock.global;
 
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.mode.repository.cluster.core.lock.DistributedLockHolder;
 import org.apache.shardingsphere.mode.repository.cluster.ClusterPersistRepository;
-import org.apache.shardingsphere.mode.repository.cluster.lock.holder.DistributedLockHolder;
 
 /**
  * Global lock persist service.
  */
+@RequiredArgsConstructor
 public final class GlobalLockPersistService {
     
-    private final DistributedLockHolder lockHolder;
-    
-    public GlobalLockPersistService(final ClusterPersistRepository repository) {
-        lockHolder = repository.getDistributedLockHolder();
-    }
+    private final ClusterPersistRepository repository;
     
     /**
      * Try lock.
@@ -39,7 +37,7 @@ public final class GlobalLockPersistService {
      * @return is locked or not
      */
     public boolean tryLock(final GlobalLockDefinition lockDefinition, final long timeoutMillis) {
-        return lockHolder.getDistributedLock(lockDefinition.getLockKey()).tryLock(timeoutMillis);
+        return DistributedLockHolder.getDistributedLock(lockDefinition.getLockKey(), repository).tryLock(timeoutMillis);
     }
     
     /**
@@ -48,6 +46,6 @@ public final class GlobalLockPersistService {
      * @param lockDefinition lock definition
      */
     public void unlock(final GlobalLockDefinition lockDefinition) {
-        lockHolder.getDistributedLock(lockDefinition.getLockKey()).unlock();
+        DistributedLockHolder.getDistributedLock(lockDefinition.getLockKey(), repository).unlock();
     }
 }

@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropEventTriggerStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * PostgreSQL drop event trigger statement.
+ * Drop event trigger statement for PostgreSQL.
  */
-public final class PostgreSQLDropEventTriggerStatement extends DropEventTriggerStatement implements PostgreSQLStatement {
+public final class PostgreSQLDropEventTriggerStatement extends AbstractSQLStatement implements DDLStatement {
 }

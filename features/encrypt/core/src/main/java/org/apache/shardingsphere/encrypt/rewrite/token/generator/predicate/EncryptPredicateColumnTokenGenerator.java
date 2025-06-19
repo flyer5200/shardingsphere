@@ -30,8 +30,8 @@ import org.apache.shardingsphere.infra.binder.context.extractor.SQLStatementCont
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.Projection;
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.impl.ColumnProjection;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.statement.dml.SelectStatementContext;
-import org.apache.shardingsphere.infra.binder.context.type.WhereAvailable;
+import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
+import org.apache.shardingsphere.infra.binder.context.available.WhereContextAvailable;
 import org.apache.shardingsphere.infra.database.core.metadata.database.enums.QuoteCharacter;
 import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.database.core.type.DatabaseTypeRegistry;
@@ -44,7 +44,6 @@ import org.apache.shardingsphere.sql.parser.statement.core.extractor.ExpressionE
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.BinaryOperationExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.ExpressionSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.AndPredicate;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 
@@ -65,23 +64,21 @@ public final class EncryptPredicateColumnTokenGenerator implements CollectionSQL
     
     @Override
     public boolean isGenerateSQLToken(final SQLStatementContext sqlStatementContext) {
-        return sqlStatementContext instanceof WhereAvailable;
+        return sqlStatementContext instanceof WhereContextAvailable;
     }
     
     @Override
     public Collection<SQLToken> generateSQLTokens(final SQLStatementContext sqlStatementContext) {
         Collection<SelectStatementContext> allSubqueryContexts = SQLStatementContextExtractor.getAllSubqueryContexts(sqlStatementContext);
-        Collection<WhereSegment> whereSegments = SQLStatementContextExtractor.getWhereSegments((WhereAvailable) sqlStatementContext, allSubqueryContexts);
-        Collection<AndPredicate> andPredicates = getAndPredicates(whereSegments);
-        return generateSQLTokens(andPredicates, sqlStatementContext);
+        Collection<WhereSegment> whereSegments = SQLStatementContextExtractor.getWhereSegments((WhereContextAvailable) sqlStatementContext, allSubqueryContexts);
+        Collection<ExpressionSegment> expressions = getAllExpressions(whereSegments);
+        return generateSQLTokens(expressions, sqlStatementContext);
     }
     
-    private Collection<SQLToken> generateSQLTokens(final Collection<AndPredicate> andPredicates, final SQLStatementContext sqlStatementContext) {
+    private Collection<SQLToken> generateSQLTokens(final Collection<ExpressionSegment> expressions, final SQLStatementContext sqlStatementContext) {
         Collection<SQLToken> result = new LinkedList<>();
-        for (AndPredicate each : andPredicates) {
-            for (ExpressionSegment expression : each.getPredicates()) {
-                result.addAll(generateSQLTokens(sqlStatementContext, expression));
-            }
+        for (ExpressionSegment each : expressions) {
+            result.addAll(generateSQLTokens(sqlStatementContext, each));
         }
         return result;
     }
@@ -98,10 +95,14 @@ public final class EncryptPredicateColumnTokenGenerator implements CollectionSQL
         return result;
     }
     
-    private Collection<AndPredicate> getAndPredicates(final Collection<WhereSegment> whereSegments) {
-        Collection<AndPredicate> result = new LinkedList<>();
+    private Collection<ExpressionSegment> getAllExpressions(final Collection<WhereSegment> whereSegments) {
+        if (1 == whereSegments.size()) {
+            return ExpressionExtractor.extractAllExpressions(whereSegments.iterator().next().getExpr());
+        }
+        Collection<ExpressionSegment> result = new LinkedList<>();
         for (WhereSegment each : whereSegments) {
-            result.addAll(ExpressionExtractor.extractAndPredicates(each.getExpr()));
+            Collection<ExpressionSegment> expressions = ExpressionExtractor.extractAllExpressions(each.getExpr());
+            result.addAll(expressions);
         }
         return result;
     }

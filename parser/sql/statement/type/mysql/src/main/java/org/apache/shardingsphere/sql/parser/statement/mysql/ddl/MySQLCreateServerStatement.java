@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.mysql.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateServerStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.MySQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * MySQL create server statement.
+ * Create server statement for MySQL.
  */
-public final class MySQLCreateServerStatement extends CreateServerStatement implements MySQLStatement {
+public final class MySQLCreateServerStatement extends AbstractSQLStatement implements DDLStatement {
 }

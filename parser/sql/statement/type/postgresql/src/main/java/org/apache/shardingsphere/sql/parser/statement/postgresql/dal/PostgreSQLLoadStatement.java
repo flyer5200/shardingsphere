@@ -17,11 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.postgresql.dal;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.LoadStatement;
-import org.apache.shardingsphere.sql.parser.statement.postgresql.PostgreSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.DALStatement;
 
 /**
- * PostgreSQL load statement.
+ * Load statement for PostgreSQL.
  */
-public final class PostgreSQLLoadStatement extends LoadStatement implements PostgreSQLStatement {
+public final class PostgreSQLLoadStatement extends AbstractSQLStatement implements DALStatement {
 }

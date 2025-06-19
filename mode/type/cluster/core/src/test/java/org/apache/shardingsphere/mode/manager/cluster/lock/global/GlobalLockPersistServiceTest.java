@@ -18,12 +18,15 @@
 package org.apache.shardingsphere.mode.manager.cluster.lock.global;
 
 import org.apache.shardingsphere.mode.repository.cluster.ClusterPersistRepository;
+import org.apache.shardingsphere.mode.repository.cluster.lock.DistributedLock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -35,25 +38,37 @@ class GlobalLockPersistServiceTest {
     @Mock
     private GlobalLock globalLock;
     
+    @Mock
+    private DistributedLock distributedLock;
+    
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private ClusterPersistRepository repository;
     
+    private GlobalLockPersistService globalLockPersistService;
+    
     @BeforeEach
     void setUp() {
-        when(globalLock.getName()).thenReturn("foo_lock");
+        globalLockPersistService = new GlobalLockPersistService(repository);
     }
     
     @Test
     void assertTryLock() {
-        when(repository.getDistributedLockHolder().getDistributedLock("/lock/global/locks/foo_lock").tryLock(1000L)).thenReturn(true);
+        mockLock("foo_lock", "/lock/global/locks/foo_lock");
+        when(distributedLock.tryLock(1000L)).thenReturn(true);
         GlobalLockDefinition lockDefinition = new GlobalLockDefinition(globalLock);
-        assertTrue(new GlobalLockPersistService(repository).tryLock(lockDefinition, 1000L));
+        assertTrue(globalLockPersistService.tryLock(lockDefinition, 1000L));
     }
     
     @Test
     void assertUnlock() {
+        mockLock("bar_lock", "/lock/global/locks/bar_lock");
         GlobalLockDefinition lockDefinition = new GlobalLockDefinition(globalLock);
-        new GlobalLockPersistService(repository).unlock(lockDefinition);
-        verify(repository.getDistributedLockHolder().getDistributedLock("/lock/global/locks/foo_lock")).unlock();
+        globalLockPersistService.unlock(lockDefinition);
+        verify(distributedLock).unlock();
+    }
+    
+    private void mockLock(final String lockName, final String lockKey) {
+        when(globalLock.getName()).thenReturn(lockName);
+        when(repository.getDistributedLock(lockKey)).thenReturn(Optional.of(distributedLock));
     }
 }

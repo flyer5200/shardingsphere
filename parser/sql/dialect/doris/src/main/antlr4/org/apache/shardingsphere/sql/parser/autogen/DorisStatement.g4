@@ -17,7 +17,7 @@
 
 grammar DorisStatement;
 
-import Comments, DDLStatement, TCLStatement, DCLStatement, RLStatement;
+import Comments, DDLStatement, TCLStatement, LCLStatement, DCLStatement;
 
 execute
     : (select
@@ -82,7 +82,6 @@ execute
     | install
     | kill
     | loadStatement
-    | lock
     | cacheIndex
     | loadIndexInfo
     | optimizeTable
@@ -115,19 +114,21 @@ execute
     | analyzeTable
     | renameTable
     | uninstall
-    | unlock
     | xaBegin
     | xaPrepare
     | xaCommit
     | xaRollback
     | xaEnd
     | xaRecovery
+    | lock
+    | unlock
     | createLoadableFunction
     | createTablespace
     | alterTablespace
     | dropTablespace
     | delimiter
     | startReplica
+    | createMaterializedView
     // TODO consider refactor following sytax to SEMI_? EOF
     ) (SEMI_ EOF? | EOF)
     | EOF

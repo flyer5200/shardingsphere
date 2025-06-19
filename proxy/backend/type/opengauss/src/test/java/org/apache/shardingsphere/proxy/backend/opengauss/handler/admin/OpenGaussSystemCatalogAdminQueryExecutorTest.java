@@ -17,7 +17,7 @@
 
 package org.apache.shardingsphere.proxy.backend.opengauss.handler.admin;
 
-import org.apache.shardingsphere.infra.binder.context.statement.dml.SelectStatementContext;
+import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
 import org.apache.shardingsphere.infra.config.props.ConfigurationProperties;
 import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.executor.sql.execute.result.query.QueryResultMetaData;
@@ -33,7 +33,6 @@ import org.apache.shardingsphere.infra.session.connection.ConnectionContext;
 import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
 import org.apache.shardingsphere.proxy.backend.context.ProxyContext;
 import org.apache.shardingsphere.proxy.backend.session.ConnectionSession;
-import org.apache.shardingsphere.sql.parser.api.CacheOption;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.BinaryOperationExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.FunctionSegment;
@@ -42,10 +41,12 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.Colu
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ExpressionProjectionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionsSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound.TableSegmentBoundInfo;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
-import org.apache.shardingsphere.sql.parser.statement.opengauss.dml.OpenGaussSelectStatement;
+import org.apache.shardingsphere.sqlfederation.config.SQLFederationCacheOption;
 import org.apache.shardingsphere.sqlfederation.config.SQLFederationRuleConfiguration;
 import org.apache.shardingsphere.sqlfederation.rule.SQLFederationRule;
 import org.apache.shardingsphere.test.mock.AutoMockExtension;
@@ -83,16 +84,16 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData().getProps()).thenReturn(props);
         ConnectionSession connectionSession = mock(ConnectionSession.class);
         when(connectionSession.getProtocolType()).thenReturn(databaseType);
-        ConnectionContext connectionContext = mockConnectionContext();
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionSession.getConnectionContext()).thenReturn(connectionContext);
         Collection<ShardingSphereDatabase> databases = Collections.singleton(createDatabase());
-        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new CacheOption(1, 1L)), databases);
+        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new SQLFederationCacheOption(1, 1L)), databases);
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData().getGlobalRuleMetaData()).thenReturn(mock(RuleMetaData.class));
-        OpenGaussSelectStatement sqlStatement = createSelectStatementForPgDatabase();
+        SelectStatement sqlStatement = createSelectStatementForPgDatabase();
         ShardingSphereMetaData metaData = new ShardingSphereMetaData(databases,
                 mock(ResourceMetaData.class, RETURNS_DEEP_STUBS), new RuleMetaData(Collections.singletonList(sqlFederationRule)), props);
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData()).thenReturn(metaData);
-        SelectStatementContext sqlStatementContext = new SelectStatementContext(metaData, Collections.emptyList(), sqlStatement, "sharding_db", Collections.emptyList());
+        SelectStatementContext sqlStatementContext = new SelectStatementContext(databaseType, sqlStatement, Collections.emptyList(), metaData, "sharding_db", Collections.emptyList());
         OpenGaussSystemCatalogAdminQueryExecutor executor = new OpenGaussSystemCatalogAdminQueryExecutor(sqlStatementContext,
                 "select datname, datcompatibility from pg_database where datname = 'sharding_db'", "sharding_db", Collections.emptyList());
         executor.execute(connectionSession);
@@ -106,12 +107,14 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         assertThat(actualResult.getValue(2, String.class), is("PG"));
     }
     
-    private OpenGaussSelectStatement createSelectStatementForPgDatabase() {
-        OpenGaussSelectStatement result = new OpenGaussSelectStatement();
+    private SelectStatement createSelectStatementForPgDatabase() {
+        SelectStatement result = new SelectStatement();
         result.setProjections(new ProjectionsSegment(0, 0));
         result.getProjections().getProjections().add(new ColumnProjectionSegment(new ColumnSegment(0, 0, new IdentifierValue("datname"))));
         result.getProjections().getProjections().add(new ColumnProjectionSegment(new ColumnSegment(0, 0, new IdentifierValue("datcompatibility"))));
-        result.setFrom(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("pg_database"))));
+        TableNameSegment tableNameSegment = new TableNameSegment(0, 0, new IdentifierValue("pg_database"));
+        tableNameSegment.setTableBoundInfo(new TableSegmentBoundInfo(new IdentifierValue("sharding_db"), new IdentifierValue("pg_catalog")));
+        result.setFrom(new SimpleTableSegment(tableNameSegment));
         result.setWhere(new WhereSegment(0, 0,
                 new BinaryOperationExpression(0, 0, new ColumnSegment(0, 0, new IdentifierValue("datname")), new LiteralExpressionSegment(0, 0, "sharding_db"), "=", "datname = 'sharding_db'")));
         return result;
@@ -147,12 +150,12 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         ConfigurationProperties props = new ConfigurationProperties(new Properties());
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData().getProps()).thenReturn(props);
         Collection<ShardingSphereDatabase> databases = Collections.singleton(createDatabase());
-        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new CacheOption(1, 1L)), databases);
-        OpenGaussSelectStatement sqlStatement = createSelectStatementForVersion();
+        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new SQLFederationCacheOption(1, 1L)), databases);
+        SelectStatement sqlStatement = createSelectStatementForVersion();
         ShardingSphereMetaData metaData =
                 new ShardingSphereMetaData(databases, mock(ResourceMetaData.class, RETURNS_DEEP_STUBS), new RuleMetaData(Collections.singletonList(sqlFederationRule)), props);
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData()).thenReturn(metaData);
-        SelectStatementContext sqlStatementContext = new SelectStatementContext(metaData, Collections.emptyList(), sqlStatement, "sharding_db", Collections.emptyList());
+        SelectStatementContext sqlStatementContext = new SelectStatementContext(databaseType, sqlStatement, Collections.emptyList(), metaData, "sharding_db", Collections.emptyList());
         OpenGaussSystemCatalogAdminQueryExecutor executor =
                 new OpenGaussSystemCatalogAdminQueryExecutor(sqlStatementContext, "select VERSION()", "sharding_db", Collections.emptyList());
         ConnectionSession connectionSession = mock(ConnectionSession.class);
@@ -168,8 +171,8 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         assertThat((String) actualResult.getValue(1, String.class), containsString("ShardingSphere-Proxy"));
     }
     
-    private OpenGaussSelectStatement createSelectStatementForVersion() {
-        OpenGaussSelectStatement result = new OpenGaussSelectStatement();
+    private SelectStatement createSelectStatementForVersion() {
+        SelectStatement result = new SelectStatement();
         result.setProjections(new ProjectionsSegment(0, 0));
         result.getProjections().getProjections().add(new ExpressionProjectionSegment(0, 0, "VERSION()", new FunctionSegment(0, 0, "VERSION", "VERSION()")));
         return result;
@@ -183,12 +186,12 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         ConfigurationProperties props = new ConfigurationProperties(new Properties());
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData().getProps()).thenReturn(props);
         Collection<ShardingSphereDatabase> databases = Collections.singleton(createDatabase());
-        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new CacheOption(1, 1L)), databases);
-        OpenGaussSelectStatement sqlStatement = createSelectStatementForGsPasswordDeadlineAndIntervalToNum();
+        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new SQLFederationCacheOption(1, 1L)), databases);
+        SelectStatement sqlStatement = createSelectStatementForGsPasswordDeadlineAndIntervalToNum();
         ShardingSphereMetaData metaData =
                 new ShardingSphereMetaData(databases, mock(ResourceMetaData.class, RETURNS_DEEP_STUBS), new RuleMetaData(Collections.singletonList(sqlFederationRule)), props);
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData()).thenReturn(metaData);
-        SelectStatementContext sqlStatementContext = new SelectStatementContext(metaData, Collections.emptyList(), sqlStatement, "sharding_db", Collections.emptyList());
+        SelectStatementContext sqlStatementContext = new SelectStatementContext(databaseType, sqlStatement, Collections.emptyList(), metaData, "sharding_db", Collections.emptyList());
         OpenGaussSystemCatalogAdminQueryExecutor executor =
                 new OpenGaussSystemCatalogAdminQueryExecutor(sqlStatementContext, "select intervaltonum(gs_password_deadline())", "sharding_db", Collections.emptyList());
         ConnectionSession connectionSession = mock(ConnectionSession.class);
@@ -204,8 +207,8 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         assertThat(actualResult.getValue(1, Integer.class), is(90));
     }
     
-    private OpenGaussSelectStatement createSelectStatementForGsPasswordDeadlineAndIntervalToNum() {
-        OpenGaussSelectStatement result = new OpenGaussSelectStatement();
+    private SelectStatement createSelectStatementForGsPasswordDeadlineAndIntervalToNum() {
+        SelectStatement result = new SelectStatement();
         result.setProjections(new ProjectionsSegment(0, 0));
         FunctionSegment intervalToNumFunction = new FunctionSegment(0, 0, "intervaltonum", "intervaltonum(gs_password_deadline())");
         intervalToNumFunction.getParameters().add(new FunctionSegment(0, 0, "gs_password_deadline", "gs_password_deadline()"));
@@ -221,14 +224,14 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         ConfigurationProperties props = new ConfigurationProperties(new Properties());
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData().getProps()).thenReturn(props);
         Collection<ShardingSphereDatabase> databases = Collections.singleton(createDatabase());
-        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new CacheOption(1, 1L)), databases);
-        OpenGaussSelectStatement sqlStatement = createSelectStatementForGsPasswordNotifyTime();
-        ShardingSphereMetaData metaData =
-                new ShardingSphereMetaData(databases, mock(ResourceMetaData.class, RETURNS_DEEP_STUBS), new RuleMetaData(Collections.singletonList(sqlFederationRule)), props);
+        SQLFederationRule sqlFederationRule = new SQLFederationRule(new SQLFederationRuleConfiguration(false, false, new SQLFederationCacheOption(1, 1L)), databases);
+        SelectStatement sqlStatement = createSelectStatementForGsPasswordNotifyTime();
+        ShardingSphereMetaData metaData = new ShardingSphereMetaData(
+                databases, mock(ResourceMetaData.class, RETURNS_DEEP_STUBS), new RuleMetaData(Collections.singletonList(sqlFederationRule)), props);
         when(ProxyContext.getInstance().getContextManager().getMetaDataContexts().getMetaData()).thenReturn(metaData);
-        SelectStatementContext sqlStatementContext = new SelectStatementContext(metaData, Collections.emptyList(), sqlStatement, "sharding_db", Collections.emptyList());
-        OpenGaussSystemCatalogAdminQueryExecutor executor =
-                new OpenGaussSystemCatalogAdminQueryExecutor(sqlStatementContext, "select gs_password_notifytime()", "sharding_db", Collections.emptyList());
+        SelectStatementContext sqlStatementContext = new SelectStatementContext(databaseType, sqlStatement, Collections.emptyList(), metaData, "sharding_db", Collections.emptyList());
+        OpenGaussSystemCatalogAdminQueryExecutor executor = new OpenGaussSystemCatalogAdminQueryExecutor(
+                sqlStatementContext, "select gs_password_notifytime()", "sharding_db", Collections.emptyList());
         ConnectionSession connectionSession = mock(ConnectionSession.class);
         when(connectionSession.getProtocolType()).thenReturn(databaseType);
         ConnectionContext connectionContext = mockConnectionContext();
@@ -248,8 +251,8 @@ class OpenGaussSystemCatalogAdminQueryExecutorTest {
         return result;
     }
     
-    private OpenGaussSelectStatement createSelectStatementForGsPasswordNotifyTime() {
-        OpenGaussSelectStatement result = new OpenGaussSelectStatement();
+    private SelectStatement createSelectStatementForGsPasswordNotifyTime() {
+        SelectStatement result = new SelectStatement();
         result.setProjections(new ProjectionsSegment(0, 0));
         result.getProjections().getProjections()
                 .add(new ExpressionProjectionSegment(0, 0, "gs_password_notifytime()", new FunctionSegment(0, 0, "gs_password_notifytime", "gs_password_notifytime()")));

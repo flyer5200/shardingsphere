@@ -31,43 +31,17 @@ import java.util.Optional;
  */
 @Getter
 @Setter
-public abstract class AlterViewStatement extends AbstractSQLStatement implements DDLStatement {
+public final class AlterViewStatement extends AbstractSQLStatement implements DDLStatement {
     
     private SimpleTableSegment view;
     
-    /**
-     * Get select statement.
-     *
-     * @return select statement
-     */
-    public Optional<SelectStatement> getSelect() {
-        return Optional.empty();
-    }
+    private SimpleTableSegment renameView;
     
-    /**
-     * Set select statement.
-     *
-     * @param select select statement
-     */
-    public void setSelect(final SelectStatement select) {
-    }
+    private ConstraintDefinitionSegment constraintDefinition;
     
-    /**
-     * Get view definition.
-     *
-     * @return view definition
-     */
-    public Optional<String> getViewDefinition() {
-        return Optional.empty();
-    }
+    private SelectStatement select;
     
-    /**
-     * Get view definition.
-     *
-     * @param viewDefinition view definition
-     */
-    public void setViewDefinition(final String viewDefinition) {
-    }
+    private String viewDefinition;
     
     /**
      * Get rename view.
@@ -75,15 +49,7 @@ public abstract class AlterViewStatement extends AbstractSQLStatement implements
      * @return rename view
      */
     public Optional<SimpleTableSegment> getRenameView() {
-        return Optional.empty();
-    }
-    
-    /**
-     * Get rename view.
-     *
-     * @param renameView rename view
-     */
-    public void setRenameView(final SimpleTableSegment renameView) {
+        return Optional.ofNullable(renameView);
     }
     
     /**
@@ -92,14 +58,24 @@ public abstract class AlterViewStatement extends AbstractSQLStatement implements
      * @return constraint definition
      */
     public Optional<ConstraintDefinitionSegment> getConstraintDefinition() {
-        return Optional.empty();
+        return Optional.ofNullable(constraintDefinition);
     }
     
     /**
-     * Get constraint definition.
+     * Get select statement.
      *
-     * @param constraintDefinition constraint definition
+     * @return select statement
      */
-    public void setConstraintDefinition(final ConstraintDefinitionSegment constraintDefinition) {
+    public Optional<SelectStatement> getSelect() {
+        return Optional.ofNullable(select);
+    }
+    
+    /**
+     * Get view definition.
+     *
+     * @return view definition
+     */
+    public Optional<String> getViewDefinition() {
+        return Optional.ofNullable(viewDefinition);
     }
 }

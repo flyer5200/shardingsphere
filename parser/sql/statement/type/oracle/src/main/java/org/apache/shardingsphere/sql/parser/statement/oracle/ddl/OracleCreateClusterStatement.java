@@ -17,13 +17,11 @@
 
 package org.apache.shardingsphere.sql.parser.statement.oracle.ddl;
 
-import lombok.Setter;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateClusterStatement;
-import org.apache.shardingsphere.sql.parser.statement.oracle.OracleStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DDLStatement;
 
 /**
- * Oracle create cluster statement.
+ * Create cluster statement for Oracle.
  */
-@Setter
-public final class OracleCreateClusterStatement extends CreateClusterStatement implements OracleStatement {
+public final class OracleCreateClusterStatement extends AbstractSQLStatement implements DDLStatement {
 }

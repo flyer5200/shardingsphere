@@ -22,5 +22,5 @@ import org.apache.shardingsphere.sql.parser.statement.core.statement.AbstractSQL
 /**
  * Unlisten statement.
  */
-public abstract class UnlistenStatement extends AbstractSQLStatement implements DDLStatement {
+public final class UnlistenStatement extends AbstractSQLStatement implements DDLStatement {
 }
