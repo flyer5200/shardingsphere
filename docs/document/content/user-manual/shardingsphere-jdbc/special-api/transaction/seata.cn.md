@@ -9,7 +9,7 @@ Apache ShardingSphere 提供 BASE 事务，集成了 Seata 的实现。本文所
 
 ## 前提条件
 
-ShardingSphere 的 Seata 集成仅在 `apache/incubator-seata:v2.3.0` 或更高版本可用。
+ShardingSphere 的 Seata 集成仅在 `apache/incubator-seata:v2.5.0` 或更高版本可用。
 对于 `org.apache.seata:seata-all` Maven 模块对应的 Seata Client，此限制同时作用于 HotSpot VM 和 GraalVM Native Image。
 引入 Maven 依赖，并排除 `org.apache.seata:seata-all` 中过时的 `org.antlr:antlr4-runtime:4.8` 的 Maven 依赖。
 
@@ -29,7 +29,7 @@ ShardingSphere 的 Seata 集成仅在 `apache/incubator-seata:v2.3.0` 或更高�
       <dependency>
          <groupId>org.apache.seata</groupId>
          <artifactId>seata-all</artifactId>
-         <version>2.3.0</version>
+         <version>2.5.0</version>
          <exclusions>
             <exclusion>
                <groupId>org.antlr</groupId>
@@ -41,16 +41,13 @@ ShardingSphere 的 Seata 集成仅在 `apache/incubator-seata:v2.3.0` 或更高�
 </project>
 ```
 
-受 Calcite 的影响，ShardingSphere JDBC 使用的 `commons-lang:commons-lang` 和 `org.apache.commons:commons-pool2` 与 Seata Client 存在依赖冲突，
-需用户根据实际情景考虑是否需要解决依赖冲突。如果不解决依赖冲突，Maven 等构建工具会在 classpath 随机使用一个冲突依赖的版本。
-
 使用 ShardingSphere 的 Seata 集成模块时，ShardingSphere 连接的数据库实例应同时实现 ShardingSphere 的方言解析支持与 Seata AT 模式的方言解析支持。
 这类数据库包括但不限于 `mysql`，`gvenzl/oracle-free`，`gvenzl/oracle-xe`，`postgres`，`mcr.microsoft.com/mssql/server` 等 Docker Image。
 
 ### `undo_log` 表限制
 
 在每一个 ShardingSphere 涉及的真实数据库实例中均需要创建 `undo_log` 表。
-每种数据库的 SQL 的内容以 https://github.com/apache/incubator-seata/tree/v2.3.0/script/client/at/db 内对应的数据库为准。
+每种数据库的 SQL 的内容以 https://github.com/apache/incubator-seata/tree/v2.5.0/script/client/at/db 内对应的数据库为准。
 
 ### 相关配置
 
@@ -64,7 +61,7 @@ transaction:
 ```
 
 在 classpath 的根目录中增加 `seata.conf` 文件，
-配置文件格式参考 `org.apache.seata.config.FileConfiguration` 的 [JavaDoc](https://github.com/apache/incubator-seata/blob/v2.3.0/config/seata-config-core/src/main/java/org/apache/seata/config/FileConfiguration.java)。
+配置文件格式参考 `org.apache.seata.config.FileConfiguration` 的 [JavaDoc](https://github.com/apache/incubator-seata/blob/v2.5.0/config/seata-config-core/src/main/java/org/apache/seata/config/FileConfiguration.java)。
 
 `seata.conf` 存在四个属性，
 
@@ -113,15 +110,15 @@ client.application.id = example
 ```yaml
 services:
    apache-seata-server:
-      image: apache/seata-server:2.3.0
+      image: apache/seata-server:2.5.0
       ports:
          - "8091:8091"
    mysql:
-      image: mysql:9.1.0
+      image: mysql:9.4.0
       environment:
          MYSQL_ROOT_PASSWORD: example
       volumes:
-         - ./mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+         - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       ports:
          - "3306:3306"
 ```
@@ -215,7 +212,7 @@ config {
 <dependency>
     <groupId>com.mysql</groupId>
     <artifactId>mysql-connector-j</artifactId>
-    <version>9.1.0</version>
+    <version>9.4.0</version>
 </dependency>
 ```
 
@@ -226,19 +223,19 @@ dataSources:
    ds_0:
       dataSourceClassName: com.zaxxer.hikari.HikariDataSource
       driverClassName: com.mysql.cj.jdbc.Driver
-      jdbcUrl: jdbc:mysql://localhost:3306/demo_ds_0?sslMode=REQUIRED
+      standardJdbcUrl: jdbc:mysql://localhost:3306/demo_ds_0?sslMode=REQUIRED
       username: root
       password: example
    ds_1:
       dataSourceClassName: com.zaxxer.hikari.HikariDataSource
       driverClassName: com.mysql.cj.jdbc.Driver
-      jdbcUrl: jdbc:mysql://localhost:3306/demo_ds_1?sslMode=REQUIRED
+      standardJdbcUrl: jdbc:mysql://localhost:3306/demo_ds_1?sslMode=REQUIRED
       username: root
       password: example
    ds_2:
       dataSourceClassName: com.zaxxer.hikari.HikariDataSource
       driverClassName: com.mysql.cj.jdbc.Driver
-      jdbcUrl: jdbc:mysql://localhost:3306/demo_ds_2?sslMode=REQUIRED
+      standardJdbcUrl: jdbc:mysql://localhost:3306/demo_ds_2?sslMode=REQUIRED
       username: root
       password: example
 rules:
@@ -351,7 +348,7 @@ ShardingSphere 的 Seata 集成将获取到的 Seata 全局事务置入线程的
       <dependency>
          <groupId>org.apache.seata</groupId>
          <artifactId>seata-spring-boot-starter</artifactId>
-         <version>2.3.0</version>
+         <version>2.5.0</version>
          <exclusions>
             <exclusion>
                <groupId>org.antlr</groupId>
@@ -556,7 +553,7 @@ public class CustomWebMvcConfigurer implements WebMvcConfigurer {
 
 3. 微服务实例 `a-service` 和 `b-service` 均为 Spring Boot 微服务，但使用的 API 网关中间件阻断了所有包含 `TX_XID` 的 HTTP Header 的 HTTP 请求。
 用户需要考虑更改把 XID 通过服务调用传递到微服务实例 `a-service` 使用的 HTTP Header，或使用 RPC 框架把 XID 通过服务调用传递到微服务实例 `a-service`。
-参考 https://github.com/apache/incubator-seata/tree/v2.3.0/integration 。
+参考 https://github.com/apache/incubator-seata/tree/v2.5.0/integration 。
 
 4. 微服务实例 `a-service` 和 `b-service` 均为 Quarkus，Micronaut Framework 和 Helidon 等微服务。
 此情况下无法使用 Spring WebMVC HandlerInterceptor。

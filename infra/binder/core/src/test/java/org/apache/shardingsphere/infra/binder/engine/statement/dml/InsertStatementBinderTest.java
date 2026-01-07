@@ -17,8 +17,8 @@
 
 package org.apache.shardingsphere.infra.binder.engine.statement.dml;
 
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.hint.HintValueContext;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereColumn;
@@ -34,8 +34,8 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.Proj
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionsSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.InsertStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.InsertStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 import org.junit.jupiter.api.Test;
 
@@ -44,10 +44,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -59,13 +59,13 @@ class InsertStatementBinderTest {
     
     @Test
     void assertBindInsertValues() {
-        InsertStatement insertStatement = new InsertStatement();
+        InsertStatement insertStatement = new InsertStatement(databaseType);
         insertStatement.setTable(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
         insertStatement.setInsertColumns(new InsertColumnsSegment(0, 0, Arrays.asList(new ColumnSegment(0, 0, new IdentifierValue("order_id")),
                 new ColumnSegment(0, 0, new IdentifierValue("user_id")), new ColumnSegment(0, 0, new IdentifierValue("status")))));
         insertStatement.getValues().add(new InsertValuesSegment(0, 0, Arrays.asList(new LiteralExpressionSegment(0, 0, 1),
                 new LiteralExpressionSegment(0, 0, 1), new LiteralExpressionSegment(0, 0, "OK"))));
-        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), databaseType, insertStatement));
+        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), insertStatement));
         assertThat(actual, not(insertStatement));
         assertTrue(actual.getTable().isPresent());
         assertTrue(insertStatement.getTable().isPresent());
@@ -96,11 +96,11 @@ class InsertStatementBinderTest {
     
     @Test
     void assertBindInsertSelectWithColumns() {
-        InsertStatement insertStatement = new InsertStatement();
+        InsertStatement insertStatement = new InsertStatement(databaseType);
         insertStatement.setTable(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
         insertStatement.setInsertColumns(new InsertColumnsSegment(0, 0, Arrays.asList(new ColumnSegment(0, 0, new IdentifierValue("order_id")),
                 new ColumnSegment(0, 0, new IdentifierValue("user_id")), new ColumnSegment(0, 0, new IdentifierValue("status")))));
-        SelectStatement subSelectStatement = new SelectStatement();
+        SelectStatement subSelectStatement = new SelectStatement(databaseType);
         subSelectStatement.setFrom(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
         ProjectionsSegment projections = new ProjectionsSegment(0, 0);
         projections.getProjections().add(new ColumnProjectionSegment(new ColumnSegment(0, 0, new IdentifierValue("order_id"))));
@@ -110,7 +110,7 @@ class InsertStatementBinderTest {
         insertStatement.setInsertSelect(new SubquerySegment(0, 0, subSelectStatement, ""));
         insertStatement.getValues().add(new InsertValuesSegment(0, 0, Arrays.asList(new LiteralExpressionSegment(0, 0, 1),
                 new LiteralExpressionSegment(0, 0, 1), new LiteralExpressionSegment(0, 0, "OK"))));
-        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), databaseType, insertStatement));
+        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), insertStatement));
         assertThat(actual, not(insertStatement));
         assertTrue(actual.getTable().isPresent());
         assertTrue(insertStatement.getTable().isPresent());
@@ -122,9 +122,9 @@ class InsertStatementBinderTest {
     
     @Test
     void assertBindInsertSelectWithoutColumns() {
-        InsertStatement insertStatement = new InsertStatement();
+        InsertStatement insertStatement = new InsertStatement(databaseType);
         insertStatement.setTable(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
-        SelectStatement subSelectStatement = new SelectStatement();
+        SelectStatement subSelectStatement = new SelectStatement(databaseType);
         subSelectStatement.setFrom(new SimpleTableSegment(new TableNameSegment(0, 0, new IdentifierValue("t_order"))));
         ProjectionsSegment projections = new ProjectionsSegment(0, 0);
         projections.getProjections().add(new ColumnProjectionSegment(new ColumnSegment(0, 0, new IdentifierValue("order_id"))));
@@ -134,7 +134,7 @@ class InsertStatementBinderTest {
         insertStatement.setInsertSelect(new SubquerySegment(0, 0, subSelectStatement, ""));
         insertStatement.getValues().add(new InsertValuesSegment(0, 0, Arrays.asList(new LiteralExpressionSegment(0, 0, 1),
                 new LiteralExpressionSegment(0, 0, 1), new LiteralExpressionSegment(0, 0, "OK"))));
-        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), databaseType, insertStatement));
+        InsertStatement actual = new InsertStatementBinder().bind(insertStatement, new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), insertStatement));
         assertThat(actual, not(insertStatement));
         assertTrue(actual.getTable().isPresent());
         assertTrue(insertStatement.getTable().isPresent());
@@ -149,19 +149,19 @@ class InsertStatementBinderTest {
         assertThat(actualProjections.size(), is(3));
         Iterator<ProjectionSegment> projectionIterator = actualProjections.iterator();
         ProjectionSegment orderIdProjectionSegment = projectionIterator.next();
-        assertThat(orderIdProjectionSegment, instanceOf(ColumnProjectionSegment.class));
+        assertThat(orderIdProjectionSegment, isA(ColumnProjectionSegment.class));
         assertThat(((ColumnProjectionSegment) orderIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalDatabase().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) orderIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalSchema().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) orderIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalTable().getValue(), is("t_order"));
         assertThat(((ColumnProjectionSegment) orderIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalColumn().getValue(), is("order_id"));
         ProjectionSegment userIdProjectionSegment = projectionIterator.next();
-        assertThat(userIdProjectionSegment, instanceOf(ColumnProjectionSegment.class));
+        assertThat(userIdProjectionSegment, isA(ColumnProjectionSegment.class));
         assertThat(((ColumnProjectionSegment) userIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalDatabase().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) userIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalSchema().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) userIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalTable().getValue(), is("t_order"));
         assertThat(((ColumnProjectionSegment) userIdProjectionSegment).getColumn().getColumnBoundInfo().getOriginalColumn().getValue(), is("user_id"));
         ProjectionSegment statusProjectionSegment = projectionIterator.next();
-        assertThat(statusProjectionSegment, instanceOf(ColumnProjectionSegment.class));
+        assertThat(statusProjectionSegment, isA(ColumnProjectionSegment.class));
         assertThat(((ColumnProjectionSegment) statusProjectionSegment).getColumn().getColumnBoundInfo().getOriginalDatabase().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) statusProjectionSegment).getColumn().getColumnBoundInfo().getOriginalSchema().getValue(), is("foo_db"));
         assertThat(((ColumnProjectionSegment) statusProjectionSegment).getColumn().getColumnBoundInfo().getOriginalTable().getValue(), is("t_order"));

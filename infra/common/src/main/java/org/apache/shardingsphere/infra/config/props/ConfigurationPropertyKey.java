@@ -19,7 +19,7 @@ package org.apache.shardingsphere.infra.config.props;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.props.TypedPropertyKey;
 
 import java.util.Arrays;
@@ -52,6 +52,12 @@ public enum ConfigurationPropertyKey implements TypedPropertyKey {
      * Max opened connection size for each query.
      */
     MAX_CONNECTIONS_SIZE_PER_QUERY("max-connections-size-per-query", String.valueOf(1), int.class, false),
+    
+    /**
+     * Max union size per datasource for aggregate rewrite.
+     * When route units count for a datasource exceeds this value, they will be split into batches.
+     */
+    MAX_UNION_SIZE_PER_DATASOURCE("max-union-size-per-datasource", String.valueOf(Integer.MAX_VALUE), int.class, false),
     
     /**
      * Whether validate table metadata consistency when application startup or updated.
@@ -122,7 +128,17 @@ public enum ConfigurationPropertyKey implements TypedPropertyKey {
     /**
      * Agent plugins enabled.
      */
-    AGENT_PLUGINS_ENABLED("agent-plugins-enabled", String.valueOf(Boolean.TRUE), boolean.class, false);
+    AGENT_PLUGINS_ENABLED("agent-plugins-enabled", String.valueOf(Boolean.TRUE), boolean.class, false),
+    
+    /**
+     * Persist schemas to repository.
+     */
+    PERSIST_SCHEMAS_TO_REPOSITORY_ENABLED("persist-schemas-to-repository-enabled", String.valueOf(Boolean.TRUE), boolean.class, true),
+    
+    /**
+     * Maximum size of Groovy inline expression parsing cache.
+     */
+    GROOVY_INLINE_EXPRESSION_PARSING_CACHE_MAX_SIZE("groovy-inline-expression-parsing-cache-max-size", "1000", long.class, false);
     
     private final String key;
     

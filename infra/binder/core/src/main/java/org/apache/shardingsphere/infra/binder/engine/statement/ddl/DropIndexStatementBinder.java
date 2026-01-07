@@ -23,7 +23,7 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropIndexStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.index.DropIndexStatement;
 
 /**
  * Drop index statement binder.
@@ -39,7 +39,7 @@ public final class DropIndexStatementBinder implements SQLStatementBinder<DropIn
     }
     
     private DropIndexStatement copy(final DropIndexStatement sqlStatement, final SimpleTableSegment boundTable) {
-        DropIndexStatement result = new DropIndexStatement();
+        DropIndexStatement result = new DropIndexStatement(sqlStatement.getDatabaseType());
         result.setSimpleTable(boundTable);
         result.getIndexes().addAll(sqlStatement.getIndexes());
         sqlStatement.getAlgorithmType().ifPresent(result::setAlgorithmType);

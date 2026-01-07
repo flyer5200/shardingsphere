@@ -23,7 +23,7 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.TruncateStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.TruncateStatement;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -41,8 +41,7 @@ public final class TruncateStatementBinder implements SQLStatementBinder<Truncat
     }
     
     private TruncateStatement copy(final TruncateStatement sqlStatement, final Collection<SimpleTableSegment> boundTables) {
-        TruncateStatement result = new TruncateStatement();
-        result.getTables().addAll(boundTables);
+        TruncateStatement result = new TruncateStatement(sqlStatement.getDatabaseType(), boundTables);
         SQLStatementCopyUtils.copyAttributes(sqlStatement, result);
         return result;
     }

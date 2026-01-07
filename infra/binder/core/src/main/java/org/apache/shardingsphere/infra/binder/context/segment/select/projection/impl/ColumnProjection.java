@@ -22,12 +22,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.apache.shardingsphere.database.connector.core.metadata.database.enums.QuoteCharacter;
+import org.apache.shardingsphere.database.connector.core.metadata.database.metadata.option.column.DialectColumnOption;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseTypeRegistry;
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.Projection;
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.extractor.ProjectionIdentifierExtractEngine;
-import org.apache.shardingsphere.infra.database.core.metadata.database.enums.QuoteCharacter;
-import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.option.column.DialectColumnOption;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseTypeRegistry;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.ParenthesesSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound.ColumnSegmentBoundInfo;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
@@ -57,6 +57,10 @@ public final class ColumnProjection implements Projection {
     
     private final ColumnSegmentBoundInfo columnBoundInfo;
     
+    private String columnLabel;
+    
+    private String columnName;
+    
     public ColumnProjection(final String owner, final String name, final String alias, final DatabaseType databaseType) {
         this(null == owner ? null : new IdentifierValue(owner, QuoteCharacter.NONE), new IdentifierValue(name, QuoteCharacter.NONE),
                 null == alias ? null : new IdentifierValue(alias, QuoteCharacter.NONE), databaseType, null, null, null);
@@ -69,6 +73,21 @@ public final class ColumnProjection implements Projection {
     public ColumnProjection(final IdentifierValue owner, final IdentifierValue name, final IdentifierValue alias, final DatabaseType databaseType,
                             final ParenthesesSegment leftParentheses, final ParenthesesSegment rightParentheses) {
         this(owner, name, alias, databaseType, leftParentheses, rightParentheses, null);
+    }
+    
+    public ColumnProjection(final IdentifierValue owner, final IdentifierValue name, final IdentifierValue alias, final DatabaseType databaseType, final ParenthesesSegment leftParentheses,
+                            final ParenthesesSegment rightParentheses, final ColumnSegmentBoundInfo columnBoundInfo, final boolean initColumnNameAndLabel) {
+        this.owner = owner;
+        this.name = name;
+        this.alias = alias;
+        this.databaseType = databaseType;
+        this.leftParentheses = leftParentheses;
+        this.rightParentheses = rightParentheses;
+        this.columnBoundInfo = columnBoundInfo;
+        if (initColumnNameAndLabel) {
+            columnName = createColumnName(name, databaseType);
+            columnLabel = createColumnLabel(name, databaseType);
+        }
     }
     
     /**
@@ -122,13 +141,21 @@ public final class ColumnProjection implements Projection {
     
     @Override
     public String getColumnName() {
+        return null == columnName ? createColumnName(name, databaseType) : columnName;
+    }
+    
+    @Override
+    public String getColumnLabel() {
+        return null == columnLabel ? createColumnLabel(name, databaseType) : columnLabel;
+    }
+    
+    private String createColumnName(final IdentifierValue name, final DatabaseType databaseType) {
         ProjectionIdentifierExtractEngine extractEngine = new ProjectionIdentifierExtractEngine(databaseType);
         DialectColumnOption columnOption = new DatabaseTypeRegistry(databaseType).getDialectDatabaseMetaData().getColumnOption();
         return columnOption.isColumnNameEqualsLabelInColumnProjection() ? getColumnLabel() : extractEngine.getIdentifierValue(name);
     }
     
-    @Override
-    public String getColumnLabel() {
+    private String createColumnLabel(final IdentifierValue name, final DatabaseType databaseType) {
         ProjectionIdentifierExtractEngine extractEngine = new ProjectionIdentifierExtractEngine(databaseType);
         return getAlias().map(extractEngine::getIdentifierValue).orElseGet(() -> extractEngine.getIdentifierValue(name));
     }

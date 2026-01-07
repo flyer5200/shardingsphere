@@ -23,16 +23,16 @@ import org.apache.shardingsphere.data.pipeline.core.ingest.position.type.placeho
 import org.apache.shardingsphere.data.pipeline.core.ingest.record.DataRecord;
 import org.apache.shardingsphere.data.pipeline.core.ingest.record.NormalColumn;
 import org.apache.shardingsphere.data.pipeline.core.sqlbuilder.dialect.DialectPipelineSQLBuilder;
-import org.apache.shardingsphere.infra.database.core.spi.DatabaseTypedSPILoader;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
+import org.apache.shardingsphere.database.connector.core.spi.DatabaseTypedSPILoader;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
-import org.apache.shardingsphere.test.fixture.jdbc.MockedDataSource;
+import org.apache.shardingsphere.test.infra.fixture.jdbc.MockedDataSource;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -82,13 +82,23 @@ class OpenGaussPipelineSQLBuilderTest {
     }
     
     @Test
+    void assertBuildSplitByUniqueKeyRangedSubqueryClause() {
+        assertThat(sqlBuilder.buildSplitByUniqueKeyRangedSubqueryClause("foo_tbl", "id", true),
+                is("SELECT id FROM foo_tbl WHERE id>? ORDER BY id LIMIT ?"));
+        assertThat(sqlBuilder.buildSplitByUniqueKeyRangedSubqueryClause("foo_tbl", "id", false),
+                is("SELECT id FROM foo_tbl ORDER BY id LIMIT ?"));
+    }
+    
+    @SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")
+    @Test
     void assertBuildCreateTableSQLs() throws SQLException {
         Connection connection = mock(Connection.class, RETURNS_DEEP_STUBS);
         ResultSet resultSet = mock(ResultSet.class);
         when(resultSet.next()).thenReturn(true);
-        when(resultSet.getString("pg_get_tabledef")).thenReturn("CREATE TABLE foo_tbl (id INT PRIMARY KEY);");
+        when(resultSet.getString("pg_get_tabledef")).thenReturn("CREATE TABLE foo_tbl (id INT PRIMARY KEY);ALTER TABLE foo_tbl OWNER TO root");
         when(connection.createStatement().executeQuery("SELECT * FROM pg_get_tabledef('foo_schema.foo_tbl')")).thenReturn(resultSet);
-        assertThat(sqlBuilder.buildCreateTableSQLs(new MockedDataSource(connection), "foo_schema", "foo_tbl"), is(Collections.singletonList("CREATE TABLE foo_tbl (id INT PRIMARY KEY)")));
+        assertThat(sqlBuilder.buildCreateTableSQLs(new MockedDataSource(connection), "foo_schema", "foo_tbl"),
+                is(Arrays.asList("CREATE TABLE foo_tbl (id INT PRIMARY KEY)", "ALTER TABLE foo_schema.foo_tbl OWNER TO root")));
     }
     
     @Test

@@ -19,12 +19,12 @@ package org.apache.shardingsphere.infra.binder.mysql;
 
 import org.apache.shardingsphere.infra.binder.context.DialectCommonSQLStatementContextWarpProvider;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.OptimizeTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowCreateTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.LoadDataStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.LoadXMLStatement;
-import org.apache.shardingsphere.sql.parser.statement.mysql.dal.MySQLDescribeStatement;
 import org.apache.shardingsphere.sql.parser.statement.mysql.dal.MySQLFlushStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.show.column.MySQLDescribeStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.show.table.MySQLShowCreateTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.table.MySQLOptimizeTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dml.MySQLLoadDataStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dml.MySQLLoadXMLStatement;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,7 +35,7 @@ import java.util.Collection;
 public final class MySQLSQLStatementContextWarpProvider implements DialectCommonSQLStatementContextWarpProvider {
     
     private static final Collection<Class<? extends SQLStatement>> NEED_TO_WARP_SQL_STATEMENT_TYPES = Arrays.asList(
-            ShowCreateTableStatement.class, MySQLFlushStatement.class, OptimizeTableStatement.class, MySQLDescribeStatement.class, LoadDataStatement.class, LoadXMLStatement.class);
+            MySQLShowCreateTableStatement.class, MySQLFlushStatement.class, MySQLOptimizeTableStatement.class, MySQLDescribeStatement.class, MySQLLoadDataStatement.class, MySQLLoadXMLStatement.class);
     
     @Override
     public Collection<Class<? extends SQLStatement>> getNeedToWarpSQLStatementTypes() {

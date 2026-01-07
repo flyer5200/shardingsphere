@@ -17,6 +17,7 @@
 
 package org.apache.shardingsphere.infra.rewrite.context;
 
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
 import org.apache.shardingsphere.infra.binder.context.statement.type.dml.InsertStatementContext;
 import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
@@ -29,6 +30,9 @@ import org.apache.shardingsphere.infra.rewrite.sql.token.common.generator.Collec
 import org.apache.shardingsphere.infra.rewrite.sql.token.common.generator.OptionalSQLTokenGenerator;
 import org.apache.shardingsphere.infra.rewrite.sql.token.common.pojo.SQLToken;
 import org.apache.shardingsphere.infra.session.query.QueryContext;
+import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.SQLStatementAttributes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,8 +44,8 @@ import org.mockito.quality.Strictness;
 
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -50,6 +54,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SQLRewriteContextTest {
+    
+    private final DatabaseType databaseType = TypedSPILoader.getService(DatabaseType.class, "FIXTURE");
     
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private SQLStatementContext sqlStatementContext;
@@ -75,6 +81,10 @@ class SQLRewriteContextTest {
     @BeforeEach
     void setUp() {
         when(sqlStatementContext.getTablesContext().getDatabaseNames()).thenReturn(Collections.emptyList());
+        SQLStatement sqlStatement = mock(SQLStatement.class);
+        when(sqlStatement.getDatabaseType()).thenReturn(databaseType);
+        when(sqlStatement.getAttributes()).thenReturn(new SQLStatementAttributes());
+        when(sqlStatementContext.getSqlStatement()).thenReturn(sqlStatement);
         when(optionalSQLTokenGenerator.generateSQLToken(sqlStatementContext)).thenReturn(sqlToken);
         when(collectionSQLTokenGenerator.generateSQLTokens(sqlStatementContext)).thenReturn(Collections.singleton(sqlToken));
         when(database.getName()).thenReturn("foo_db");
@@ -86,13 +96,15 @@ class SQLRewriteContextTest {
         InsertStatementContext statementContext = mock(InsertStatementContext.class, RETURNS_DEEP_STUBS);
         when(statementContext.getTablesContext().getDatabaseName().isPresent()).thenReturn(false);
         when(statementContext.getInsertSelectContext()).thenReturn(null);
+        when(statementContext.getGroupedParameters()).thenReturn(Collections.emptyList());
+        when(statementContext.getOnDuplicateKeyUpdateParameters()).thenReturn(Collections.emptyList());
         QueryContext queryContext = mock(QueryContext.class, RETURNS_DEEP_STUBS);
         when(queryContext.getSqlStatementContext()).thenReturn(statementContext);
         when(queryContext.getSql()).thenReturn("INSERT INTO tbl VALUES (?)");
         when(queryContext.getParameters()).thenReturn(Collections.singletonList(1));
         when(queryContext.getHintValueContext()).thenReturn(hintValueContext);
         SQLRewriteContext sqlRewriteContext = new SQLRewriteContext(database, queryContext);
-        assertThat(sqlRewriteContext.getParameterBuilder(), instanceOf(GroupedParameterBuilder.class));
+        assertThat(sqlRewriteContext.getParameterBuilder(), isA(GroupedParameterBuilder.class));
     }
     
     @Test
@@ -105,7 +117,7 @@ class SQLRewriteContextTest {
         when(queryContext.getParameters()).thenReturn(Collections.singletonList(1));
         when(queryContext.getHintValueContext()).thenReturn(hintValueContext);
         SQLRewriteContext sqlRewriteContext = new SQLRewriteContext(database, queryContext);
-        assertThat(sqlRewriteContext.getParameterBuilder(), instanceOf(StandardParameterBuilder.class));
+        assertThat(sqlRewriteContext.getParameterBuilder(), isA(StandardParameterBuilder.class));
     }
     
     @Test
@@ -119,7 +131,7 @@ class SQLRewriteContextTest {
         sqlRewriteContext.addSQLTokenGenerators(Collections.singleton(optionalSQLTokenGenerator));
         sqlRewriteContext.generateSQLTokens();
         assertFalse(sqlRewriteContext.getSqlTokens().isEmpty());
-        assertThat(sqlRewriteContext.getSqlTokens().get(0), instanceOf(SQLToken.class));
+        assertThat(sqlRewriteContext.getSqlTokens().get(0), isA(SQLToken.class));
     }
     
     @Test
@@ -133,6 +145,6 @@ class SQLRewriteContextTest {
         sqlRewriteContext.addSQLTokenGenerators(Collections.singleton(collectionSQLTokenGenerator));
         sqlRewriteContext.generateSQLTokens();
         assertFalse(sqlRewriteContext.getSqlTokens().isEmpty());
-        assertThat(sqlRewriteContext.getSqlTokens().get(0), instanceOf(SQLToken.class));
+        assertThat(sqlRewriteContext.getSqlTokens().get(0), isA(SQLToken.class));
     }
 }

@@ -17,49 +17,63 @@
 
 package org.apache.shardingsphere.sql.parser.statement.core.statement;
 
+import com.cedarsoftware.util.CaseInsensitiveSet;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.sql.parser.api.ASTNode;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.CommentSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.ParameterMarkerSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.SQLStatementAttributes;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 
 /**
  * SQL statement.
  */
-public interface SQLStatement extends ASTNode {
+@RequiredArgsConstructor
+@Getter
+public class SQLStatement implements ASTNode {
+    
+    private final Collection<Integer> uniqueParameterIndexes = new LinkedHashSet<>();
+    
+    private final Collection<ParameterMarkerSegment> parameterMarkers = new LinkedHashSet<>();
+    
+    private final Collection<String> variableNames = new CaseInsensitiveSet<>();
+    
+    private final Collection<CommentSegment> comments = new LinkedList<>();
+    
+    private final DatabaseType databaseType;
     
     /**
      * Get count of parameters.
      *
      * @return count of parameters
      */
-    int getParameterCount();
-    
-    /**
-     * Get parameter marker segments.
-     *
-     * @return parameter marker segments
-     */
-    Collection<ParameterMarkerSegment> getParameterMarkers();
+    public final int getParameterCount() {
+        return uniqueParameterIndexes.size();
+    }
     
     /**
      * Add parameter marker segments.
      *
      * @param segments parameter marker segments
      */
-    void addParameterMarkers(Collection<ParameterMarkerSegment> segments);
+    public final void addParameterMarkers(final Collection<ParameterMarkerSegment> segments) {
+        for (ParameterMarkerSegment each : segments) {
+            parameterMarkers.add(each);
+            uniqueParameterIndexes.add(each.getParameterIndex());
+        }
+    }
     
     /**
-     * Get variable names.
+     * Get SQL statement attributes.
      *
-     * @return variable names
+     * @return SQL statement attributes
      */
-    Collection<String> getVariableNames();
-    
-    /**
-     * Get comment segments.
-     *
-     * @return comment segments
-     */
-    Collection<CommentSegment> getComments();
+    public SQLStatementAttributes getAttributes() {
+        return new SQLStatementAttributes();
+    }
 }

@@ -10,7 +10,7 @@ ShardingSphere's support for Firebird JDBC Driver is in an optional module.
 
 ## Prerequisites
 
-To use a `jdbcUrl` like `jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_0.fdb` for the data node in the ShardingSphere configuration file,
+To use a `standardJdbcUrl` like `jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_0.fdb` for the data node in the ShardingSphere configuration file,
 the possible Maven dependencies are as follows,
 
 ```xml
@@ -22,13 +22,13 @@ the possible Maven dependencies are as follows,
     </dependency>
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-parser-sql-firebird</artifactId>
+        <artifactId>shardingsphere-jdbc-dialect-firebird</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
     <dependency>
         <groupId>org.firebirdsql.jdbc</groupId>
         <artifactId>jaybird</artifactId>
-        <version>5.0.6.java8</version>
+        <version>5.0.10.java8</version>
     </dependency>
 </dependencies>
 ```
@@ -42,7 +42,7 @@ Write a Docker Compose file to start Firebird.
 ```yaml
 services:
   firebird:
-    image: firebirdsql/firebird:5.0.1
+    image: firebirdsql/firebird:5.0.3
     environment:
       FIREBIRD_ROOT_PASSWORD: masterkey
       FIREBIRD_USER: alice
@@ -58,7 +58,7 @@ services:
 Create some business databases in Firebird through third-party tools.
 
 Third-party tools including DBeaver Community cannot create databases for Firebird.
-Below is the Java API of the Maven module `org.firebirdsql.jdbc:jaybird:5.0.6.java8` as an example.
+Below is the Java API of the Maven module `org.firebirdsql.jdbc:jaybird:5.0.10.java8` as an example.
 
 ```java
 import org.firebirdsql.management.FBManager;
@@ -92,19 +92,19 @@ dataSources:
   ds_0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.firebirdsql.jdbc.FBDriver
-    jdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_0.fdb
+    standardJdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_0.fdb
     username: alice
     password: masterkey
   ds_1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.firebirdsql.jdbc.FBDriver
-    jdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_1.fdb
+    standardJdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_1.fdb
     username: alice
     password: masterkey
   ds_2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.firebirdsql.jdbc.FBDriver
-    jdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_2.fdb
+    standardJdbcUrl: jdbc:firebird://localhost:3050//var/lib/firebird/data/demo_ds_2.fdb
     username: alice
     password: masterkey
 rules:

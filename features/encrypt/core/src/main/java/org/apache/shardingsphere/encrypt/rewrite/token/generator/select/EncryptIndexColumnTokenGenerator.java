@@ -19,6 +19,8 @@ package org.apache.shardingsphere.encrypt.rewrite.token.generator.select;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.apache.shardingsphere.database.connector.core.metadata.database.enums.QuoteCharacter;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.encrypt.rule.EncryptRule;
 import org.apache.shardingsphere.encrypt.rule.column.EncryptColumn;
 import org.apache.shardingsphere.encrypt.rule.table.EncryptTable;
@@ -26,13 +28,11 @@ import org.apache.shardingsphere.infra.annotation.HighFrequencyInvocation;
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.Projection;
 import org.apache.shardingsphere.infra.binder.context.segment.select.projection.impl.ColumnProjection;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.available.IndexContextAvailable;
-import org.apache.shardingsphere.infra.database.core.metadata.database.enums.QuoteCharacter;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.rewrite.sql.token.common.generator.CollectionSQLTokenGenerator;
 import org.apache.shardingsphere.infra.rewrite.sql.token.common.pojo.SQLToken;
 import org.apache.shardingsphere.infra.rewrite.sql.token.common.pojo.generic.SubstitutableColumnNameToken;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.type.IndexSQLStatementAttribute;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 
 import java.util.Collection;
@@ -53,7 +53,7 @@ public final class EncryptIndexColumnTokenGenerator implements CollectionSQLToke
     @Override
     public boolean isGenerateSQLToken(final SQLStatementContext sqlStatementContext) {
         return !sqlStatementContext.getTablesContext().getTableNames().isEmpty()
-                && sqlStatementContext instanceof IndexContextAvailable && !((IndexContextAvailable) sqlStatementContext).getIndexColumns().isEmpty();
+                && sqlStatementContext.getSqlStatement().getAttributes().findAttribute(IndexSQLStatementAttribute.class).map(optional -> !optional.getIndexes().isEmpty()).orElse(false);
     }
     
     @Override
@@ -61,9 +61,10 @@ public final class EncryptIndexColumnTokenGenerator implements CollectionSQLToke
         String tableName = sqlStatementContext.getTablesContext().getTableNames().iterator().next();
         EncryptTable encryptTable = rule.getEncryptTable(tableName);
         Collection<SQLToken> result = new LinkedList<>();
-        for (ColumnSegment each : ((IndexContextAvailable) sqlStatementContext).getIndexColumns()) {
+        for (ColumnSegment each : sqlStatementContext.getSqlStatement().getAttributes()
+                .findAttribute(IndexSQLStatementAttribute.class).map(IndexSQLStatementAttribute::getIndexColumns).orElse(Collections.emptyList())) {
             if (encryptTable.isEncryptColumn(each.getIdentifier().getValue())) {
-                generateSQLToken(encryptTable, each, sqlStatementContext.getDatabaseType()).ifPresent(result::add);
+                generateSQLToken(encryptTable, each, sqlStatementContext.getSqlStatement().getDatabaseType()).ifPresent(result::add);
             }
         }
         return result;

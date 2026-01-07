@@ -19,7 +19,7 @@ package org.apache.shardingsphere.infra.binder.sqlserver;
 
 import org.apache.shardingsphere.infra.binder.context.DialectCommonSQLStatementContextWarpProvider;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.DenyUserStatement;
+import org.apache.shardingsphere.sql.parser.statement.sqlserver.dcl.user.SQLServerDenyUserStatement;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.Collections;
  */
 public final class SQLServerSQLStatementContextWarpProvider implements DialectCommonSQLStatementContextWarpProvider {
     
-    private static final Collection<Class<? extends SQLStatement>> NEED_TO_WARP_SQL_STATEMENT_TYPES = Collections.singleton(DenyUserStatement.class);
+    private static final Collection<Class<? extends SQLStatement>> NEED_TO_WARP_SQL_STATEMENT_TYPES = Collections.singleton(SQLServerDenyUserStatement.class);
     
     @Override
     public Collection<Class<? extends SQLStatement>> getNeedToWarpSQLStatementTypes() {

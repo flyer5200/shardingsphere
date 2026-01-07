@@ -48,7 +48,7 @@ developers can test ShardingSphere Proxy Native in the form of `dynamically link
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -68,7 +68,7 @@ Just add the `-mostly` suffix to the Docker Image Tag corresponding to the speci
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd-mostly
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af-mostly
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -86,7 +86,7 @@ Just add the `-static` suffix to the Docker Image Tag corresponding to the speci
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd-static
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af-static
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -97,8 +97,7 @@ services:
 
 If you build from source code, developers have two options,
 
-1. Build a `Linux Docker Image` containing ShardingSphere Proxy Native products without installing a local toolchain
-
+1. Build a `Linux Container` containing ShardingSphere Proxy Native products without installing a local toolchain
 2. Build a ShardingSphere Proxy Native product with a local toolchain installed. For Windows, you can create a GraalVM Native Image in the form of `.exe` in this way
 
 ### Use JARs with custom SPI implementations or third-party dependent JARs
@@ -116,7 +115,7 @@ An example of adding a MySQL JDBC Driver dependency is as follows. The relevant 
 </dependencies>
 ```
 
-### Build Linux Docker Image
+### Build Linux Container
 
 #### Prerequisites
 
@@ -142,27 +141,38 @@ sdk install java 21.0.7-ms
 sdk use java 21.0.7-ms
 ```
 
-You can install Docker Engine in rootful mode by running the following command in bash. This article does not discuss changing the default logging driver in `/etc/docker/daemon.json`.
+You can install Docker Engine in rootful mode by running the following command in bash.
 
 ```shell
-sudo apt update && sudo apt upgrade -y
-sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc
-cd /tmp/
-sudo apt-get install ca-certificates curl
+sudo apt update && sudo apt upgrade --assume-yes
+sudo apt-get remove docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc
+sudo apt install ca-certificates curl --assume-yes
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --assume-yes
 sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
+
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "log-driver": "local",
+  "min-api-version": "1.24"
+}
+EOF
+
+sudo systemctl restart docker.service
 ```
 
 ##### Windows
@@ -172,7 +182,7 @@ Assuming the contributor is on a fresh Windows 11 Home 24H2 instance with `git-f
 OpenJDK 21 can be installed using `version-fox/vfox` in Powershell 7 using the following command.
 
 ```shell
-winget install version-fox.vfox
+winget install --id version-fox.vfox --source winget --exact
 if (-not (Test-Path -Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force }; Add-Content -Path $PROFILE -Value 'Invoke-Expression "$(vfox activate pwsh)"'
 # At this time, you need to open a new Powershell 7 terminal
 vfox add java
@@ -190,8 +200,26 @@ You can enable WSL2 and set `Ubuntu WSL` as the default Linux distribution in Po
 wsl --install
 ```
 
-After enabling WSL2, download and install `rancher-sandbox/rancher-desktop` from https://rancherdesktop.io/ and set up `Container Engine` using `dockerd(moby)`.
-This article does not discuss changing the default logging driver in `/etc/docker/daemon.json` of the Linux distribution `rancher-desktop`.
+After enabling WSL2, download and install `rancher-sandbox/rancher-desktop` using the following PowerShell 7 command, 
+and configure `dockerd(moby)` to use the `Container Engine`.
+
+```shell
+winget install --id SUSE.RancherDesktop --source winget --skip-dependencies
+# Open a new PowerShell 7 terminal
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+
+@'
+{
+  "features": {
+    "containerd-snapshotter": true
+  },
+  "log-driver": "local"
+}
+'@ | rdctl shell sudo tee /etc/docker/daemon.json
+
+rdctl shutdown
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+```
 
 #### Build a Docker Image with a dynamically linked GraalVM Native Image
 
@@ -265,7 +293,7 @@ services:
 
 Contributors must have installed on their devices,
 
-1. GraalVM CE 22.0.2, or a GraalVM downstream distribution compatible with GraalVM CE 22.0.2. Refer to [GraalVM Native Image](/en/user-manual/shardingsphere-jdbc/graalvm-native-image).
+1. GraalVM CE 24.0.2, or a GraalVM downstream distribution compatible with GraalVM CE 24.0.2. Refer to [GraalVM Native Image](/en/user-manual/shardingsphere-jdbc/graalvm-native-image).
 2. The native toolchain required to compile GraalVM Native Image. Refer to https://www.graalvm.org/latest/reference-manual/native-image/#prerequisites .
 
 The possible required operations under Ubuntu and Windows are consistent with [Development and test](/en/user-manual/shardingsphere-jdbc/graalvm-native-image/development).
@@ -293,7 +321,7 @@ You can execute the following command to build.
 ```shell
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+AddAllCharsets,-H:+StaticExecutableWithDynamicLibC" clean package
+./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+UnlockExperimentalVMOptions,-H:+AddAllCharsets,-H:+IncludeAllLocales,--static-nolibc" clean package
 ```
 
 #### Build a fully statically linked GraalVM Native Image
@@ -303,7 +331,7 @@ You can execute the following command to build.
 ```shell
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+AddAllCharsets,--static,--libc=musl" clean package
+./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+UnlockExperimentalVMOptions,-H:+AddAllCharsets,-H:+IncludeAllLocales,--static,--libc=musl" clean package
 ```
 
 #### Use GraalVM Native Image
@@ -378,7 +406,7 @@ ShardingSphere does not provide the build configuration required to build Docker
 
 ### Wasm Module Limitations
 
-Although `Oracle GraalVM Early Access Builds For JDK 25 EA 24` already supports building GraalVM Native Image in the form of `Wasm Module`,
-ShardingSphere is not yet ready to test CI under OpenJDK 25.
+Although `Oracle GraalVM Early Access Builds For JDK 26 EA 3` already supports building GraalVM Native Image in the form of `Wasm Module`,
+ShardingSphere is not yet ready to test CI under OpenJDK 26.
 
 Currently, ShardingSphere Proxy Native does not provide the build configuration required to compile to `Wasm Module`.

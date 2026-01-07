@@ -10,7 +10,7 @@ ShardingSphere's support for Presto JDBC Driver is in an optional module.
 
 ## Prerequisites
 
-To use a `jdbcUrl` like `jdbc:presto://localhost:8080/iceberg/demo_ds_0` for the data node in the ShardingSphere configuration file,
+To use a `standardJdbcUrl` like `jdbc:presto://localhost:8080/iceberg/demo_ds_0` for the data node in the ShardingSphere configuration file,
 Possible Maven dependencies are as follows,
 
 ```xml
@@ -22,13 +22,13 @@ Possible Maven dependencies are as follows,
     </dependency>
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-parser-sql-presto</artifactId>
+        <artifactId>shardingsphere-jdbc-dialect-presto</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
     <dependency>
         <groupId>com.facebook.presto</groupId>
         <artifactId>presto-jdbc</artifactId>
-        <version>0.292</version>
+        <version>0.296</version>
     </dependency>
 </dependencies>
 ```
@@ -44,7 +44,7 @@ In addition, this Iceberg Connector will start a Hive Metastore Server using a l
 ```yaml
 services:
   presto:
-    image: prestodb/presto:0.292
+    image: prestodb/presto:0.296
     ports:
       - "8080:8080"
     volumes:
@@ -71,7 +71,7 @@ sudo snap install dbeaver-ce
 snap run dbeaver-ce
 ```
 
-In DBeaver Community, use `jdbcUrl` of `jdbc:presto://localhost:8080/iceberg`, `username` of `test` to connect to Presto, and leave `password` blank.
+In DBeaver Community, use `standardJdbcUrl` of `jdbc:presto://localhost:8080/iceberg`, `username` of `test` to connect to Presto, and leave `password` blank.
 Execute the following SQL,
 
 ```sql
@@ -81,7 +81,7 @@ CREATE SCHEMA iceberg.demo_ds_1;
 CREATE SCHEMA iceberg.demo_ds_2;
 ```
 
-Use the `jdbcUrl` of `jdbc:presto://localhost:8080/iceberg/demo_ds_0`, 
+Use the `standardJdbcUrl` of `jdbc:presto://localhost:8080/iceberg/demo_ds_0`, 
 `jdbc:presto://localhost:8080/iceberg/demo_ds_1` and `jdbc:presto://localhost:8080/iceberg/demo_ds_2` to connect to Presto and execute the following SQL,
 
 ```sql
@@ -106,17 +106,17 @@ dataSources:
   ds_0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.facebook.presto.jdbc.PrestoDriver
-    jdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_0
+    standardJdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_0
     username: test
   ds_1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.facebook.presto.jdbc.PrestoDriver
-    jdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_1
+    standardJdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_1
     username: test
   ds_2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.facebook.presto.jdbc.PrestoDriver
-    jdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_2
+    standardJdbcUrl: jdbc:presto://localhost:8080/iceberg/demo_ds_2
     username: test
 rules:
   - !SHARDING

@@ -17,7 +17,6 @@
 
 package org.apache.shardingsphere.proxy.backend.util;
 
-import lombok.RequiredArgsConstructor;
 import org.apache.shardingsphere.infra.config.rule.RuleConfiguration;
 import org.apache.shardingsphere.infra.util.yaml.YamlEngine;
 import org.apache.shardingsphere.infra.yaml.config.swapper.rule.YamlRuleConfigurationSwapperEngine;
@@ -30,11 +29,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Metadata import executor.
  */
-@RequiredArgsConstructor
 public final class MetaDataImportExecutor {
     
     private final YamlRuleConfigurationSwapperEngine ruleConfigSwapperEngine = new YamlRuleConfigurationSwapperEngine();
@@ -45,7 +44,7 @@ public final class MetaDataImportExecutor {
     
     public MetaDataImportExecutor(final ContextManager contextManager) {
         this.contextManager = contextManager;
-        this.databaseConfigImportExecutor = new YamlDatabaseConfigurationImportExecutor(contextManager);
+        databaseConfigImportExecutor = new YamlDatabaseConfigurationImportExecutor(contextManager);
     }
     
     /**
@@ -80,11 +79,8 @@ public final class MetaDataImportExecutor {
     }
     
     private Map<String, YamlProxyDatabaseConfiguration> getYamlProxyDatabaseConfigurations(final ExportedMetaData exportedMetaData) {
-        Map<String, YamlProxyDatabaseConfiguration> result = new LinkedHashMap<>();
-        for (Entry<String, String> entry : exportedMetaData.getDatabases().entrySet()) {
-            result.put(entry.getKey(), YamlEngine.unmarshal(entry.getValue(), YamlProxyDatabaseConfiguration.class));
-        }
-        return result;
+        return exportedMetaData.getDatabases().entrySet().stream().collect(
+                Collectors.toMap(Entry::getKey, entry -> YamlEngine.unmarshal(entry.getValue(), YamlProxyDatabaseConfiguration.class), (oldValue, currentValue) -> oldValue, LinkedHashMap::new));
     }
     
     private YamlProxyServerConfiguration getYamlServerConfig(final ExportedMetaData exportedMetaData) {

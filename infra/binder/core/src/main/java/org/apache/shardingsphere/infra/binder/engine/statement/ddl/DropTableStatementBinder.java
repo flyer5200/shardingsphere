@@ -23,7 +23,7 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.DropTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.table.DropTableStatement;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -41,7 +41,7 @@ public final class DropTableStatementBinder implements SQLStatementBinder<DropTa
     }
     
     private DropTableStatement copy(final DropTableStatement sqlStatement, final Collection<SimpleTableSegment> boundTables) {
-        DropTableStatement result = new DropTableStatement();
+        DropTableStatement result = new DropTableStatement(sqlStatement.getDatabaseType());
         result.getTables().addAll(boundTables);
         result.setIfExists(sqlStatement.isIfExists());
         result.setContainsCascade(sqlStatement.isContainsCascade());

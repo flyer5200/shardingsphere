@@ -18,20 +18,27 @@
 package org.apache.shardingsphere.sqlfederation.compiler.compiler;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import org.apache.shardingsphere.sqlfederation.config.SQLFederationCacheOption;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.sqlfederation.compiler.SQLFederationExecutionPlan;
 import org.apache.shardingsphere.sqlfederation.compiler.planner.cache.ExecutionPlanCacheBuilder;
 import org.apache.shardingsphere.sqlfederation.compiler.planner.cache.ExecutionPlanCacheKey;
+import org.apache.shardingsphere.sqlfederation.config.SQLFederationCacheOption;
 
 /**
  * SQL statement compiler engine.
  */
+@Slf4j
 public final class SQLStatementCompilerEngine {
     
     private final LoadingCache<ExecutionPlanCacheKey, SQLFederationExecutionPlan> executionPlanCache;
     
+    @Getter
+    private final SQLFederationCacheOption cacheOption;
+    
     public SQLStatementCompilerEngine(final SQLFederationCacheOption cacheOption) {
         executionPlanCache = ExecutionPlanCacheBuilder.build(cacheOption);
+        this.cacheOption = cacheOption;
     }
     
     /**
@@ -42,6 +49,19 @@ public final class SQLStatementCompilerEngine {
      * @return SQL federation execution plan
      */
     public SQLFederationExecutionPlan compile(final ExecutionPlanCacheKey cacheKey, final boolean useCache) {
-        return useCache ? executionPlanCache.get(cacheKey) : cacheKey.getSqlStatementCompiler().compile(cacheKey.getSqlStatement(), cacheKey.getDatabaseType());
+        if (log.isDebugEnabled()) {
+            String cacheExists = null == executionPlanCache.get(cacheKey) ? "not exists" : "exists";
+            log.debug("Execution plan cache {} for SQL: {}, useCache: {}.", cacheExists, cacheKey.getSql(), useCache);
+        }
+        return useCache ? executionPlanCache.get(cacheKey) : cacheKey.getSqlStatementCompiler().compile(cacheKey.getSqlStatement(), cacheKey.getSqlStatement().getDatabaseType().getType());
+    }
+    
+    /**
+     * Update cache option.
+     *
+     * @param cacheOption cache option
+     */
+    public void updateCacheOption(final SQLFederationCacheOption cacheOption) {
+        executionPlanCache.policy().eviction().ifPresent(optional -> optional.setMaximum(cacheOption.getMaximumSize()));
     }
 }

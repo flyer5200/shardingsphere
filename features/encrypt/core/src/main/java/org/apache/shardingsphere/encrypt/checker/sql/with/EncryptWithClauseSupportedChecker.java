@@ -23,10 +23,10 @@ import org.apache.shardingsphere.infra.annotation.HighFrequencyInvocation;
 import org.apache.shardingsphere.infra.binder.context.extractor.SQLStatementContextExtractor;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
 import org.apache.shardingsphere.infra.checker.SupportedSQLChecker;
-import org.apache.shardingsphere.infra.exception.core.ShardingSpherePreconditions;
+import org.apache.shardingsphere.infra.exception.ShardingSpherePreconditions;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereSchema;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.available.WithAvailable;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.type.WithSQLStatementAttribute;
 
 /**
  * With clause supported checker for encrypt.
@@ -36,7 +36,7 @@ public final class EncryptWithClauseSupportedChecker implements SupportedSQLChec
     
     @Override
     public boolean isCheck(final SQLStatementContext sqlStatementContext) {
-        return sqlStatementContext.getSqlStatement() instanceof WithAvailable && ((WithAvailable) sqlStatementContext.getSqlStatement()).getWith().isPresent();
+        return sqlStatementContext.getSqlStatement().getAttributes().findAttribute(WithSQLStatementAttribute.class).map(WithSQLStatementAttribute::containsWith).orElse(false);
     }
     
     @Override

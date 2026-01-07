@@ -31,7 +31,7 @@ import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.Ta
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.type.FunctionTableSegmentBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.type.SimpleTableSegmentBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
-import org.apache.shardingsphere.infra.exception.core.ShardingSpherePreconditions;
+import org.apache.shardingsphere.infra.exception.ShardingSpherePreconditions;
 import org.apache.shardingsphere.infra.exception.kernel.metadata.ColumnNotFoundException;
 import org.apache.shardingsphere.infra.exception.kernel.syntax.AmbiguousColumnException;
 import org.apache.shardingsphere.sql.parser.statement.core.enums.TableSourceType;
@@ -59,7 +59,7 @@ import java.util.Optional;
 public final class ColumnSegmentBinder {
     
     private static final Collection<String> EXCLUDE_BIND_COLUMNS = new CaseInsensitiveSet<>(Arrays.asList(
-            "ROWNUM", "ROW_NUMBER", "ROWNUM_", "ROWID", "SYSDATE", "SYSTIMESTAMP", "CURRENT_TIMESTAMP", "LOCALTIMESTAMP", "UID", "USER", "NEXTVAL", "LEVEL"));
+            "ROWNUM", "ROW_NUMBER", "ROWNUM_", "ROWID", "SYSDATE", "SYSTIMESTAMP", "CURRENT_TIMESTAMP", "LOCALTIMESTAMP", "UID", "USER", "NEXTVAL", "LEVEL", "DAY"));
     
     private static final Map<SegmentType, String> SEGMENT_TYPE_MESSAGES = Maps.of(SegmentType.PROJECTION, "field list", SegmentType.JOIN_ON, "on clause", SegmentType.JOIN_USING, "from clause",
             SegmentType.PREDICATE, "where clause", SegmentType.HAVING, "having clause", SegmentType.ORDER_BY, "order clause", SegmentType.GROUP_BY, "group statement", SegmentType.INSERT_COLUMNS,
@@ -105,7 +105,7 @@ public final class ColumnSegmentBinder {
     private static OwnerSegment bindOwnerTableContext(final OwnerSegment owner, final ColumnSegment inputColumnSegment) {
         IdentifierValue originalDatabase = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalDatabase();
         IdentifierValue originalSchema = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalSchema();
-        if (originalDatabase != null && originalSchema != null) {
+        if (null != originalDatabase && null != originalSchema) {
             owner.setTableBoundInfo(new TableSegmentBoundInfo(originalDatabase, originalSchema));
         }
         return owner;
@@ -259,18 +259,6 @@ public final class ColumnSegmentBinder {
         return false;
     }
     
-    private static ColumnSegmentBoundInfo createColumnSegmentBoundInfo(final ColumnSegment segment, final ColumnSegment inputColumnSegment, final TableSourceType tableSourceType) {
-        IdentifierValue originalDatabase = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalDatabase();
-        IdentifierValue originalSchema = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalSchema();
-        IdentifierValue segmentOriginalTable = segment.getColumnBoundInfo().getOriginalTable();
-        IdentifierValue originalTable = Strings.isNullOrEmpty(segmentOriginalTable.getValue())
-                ? Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalTable()).orElse(segmentOriginalTable)
-                : segmentOriginalTable;
-        IdentifierValue segmentOriginalColumn = segment.getColumnBoundInfo().getOriginalColumn();
-        IdentifierValue originalColumn = Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalColumn()).orElse(segmentOriginalColumn);
-        return new ColumnSegmentBoundInfo(new TableSegmentBoundInfo(originalDatabase, originalSchema), originalTable, originalColumn, tableSourceType);
-    }
-    
     /**
      * Bind using column segment.
      *
@@ -296,17 +284,38 @@ public final class ColumnSegmentBinder {
         List<ColumnSegmentInfo> result = new ArrayList<>(tableBinderContexts.size());
         for (TableSegmentBinderContext each : tableBinderContexts) {
             Optional<ProjectionSegment> projectionSegment = each.findProjectionSegmentByColumnLabel(columnName);
-            if (projectionSegment.isPresent() && projectionSegment.get() instanceof ColumnProjectionSegment) {
-                ColumnSegment columnSegment = ((ColumnProjectionSegment) projectionSegment.get()).getColumn();
-                result.add(new ColumnSegmentInfo(columnSegment, each.getTableSourceType()));
+            if (!projectionSegment.isPresent()) {
+                continue;
             }
+            ColumnSegment columnSegment = projectionSegment.get() instanceof ColumnProjectionSegment ? ((ColumnProjectionSegment) projectionSegment.get()).getColumn() : null;
+            result.add(new ColumnSegmentInfo(columnSegment, each.getTableSourceType()));
         }
         return result;
     }
     
+    /**
+     * Create column segment bound info.
+     *
+     * @param segment column segment
+     * @param inputColumnSegment input column segment
+     * @param tableSourceType table source type
+     * @return created column segment bound info
+     */
+    public static ColumnSegmentBoundInfo createColumnSegmentBoundInfo(final ColumnSegment segment, final ColumnSegment inputColumnSegment, final TableSourceType tableSourceType) {
+        IdentifierValue originalDatabase = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalDatabase();
+        IdentifierValue originalSchema = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalSchema();
+        IdentifierValue segmentOriginalTable = segment.getColumnBoundInfo().getOriginalTable();
+        IdentifierValue originalTable = Strings.isNullOrEmpty(segmentOriginalTable.getValue())
+                ? Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalTable()).orElse(segmentOriginalTable)
+                : segmentOriginalTable;
+        IdentifierValue segmentOriginalColumn = segment.getColumnBoundInfo().getOriginalColumn();
+        IdentifierValue originalColumn = Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalColumn()).orElse(segmentOriginalColumn);
+        return new ColumnSegmentBoundInfo(new TableSegmentBoundInfo(originalDatabase, originalSchema), originalTable, originalColumn, tableSourceType);
+    }
+    
     @RequiredArgsConstructor
     @Getter
-    static class ColumnSegmentInfo {
+    private static class ColumnSegmentInfo {
         
         private final ColumnSegment inputColumnSegment;
         

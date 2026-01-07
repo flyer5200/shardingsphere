@@ -17,22 +17,23 @@
 
 package org.apache.shardingsphere.encrypt.merge.dal;
 
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.encrypt.merge.dal.show.EncryptShowColumnsMergedResult;
 import org.apache.shardingsphere.encrypt.merge.dal.show.EncryptShowCreateTableMergedResult;
 import org.apache.shardingsphere.encrypt.rule.EncryptRule;
-import org.apache.shardingsphere.infra.binder.context.statement.type.CommonSQLStatementContext;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.binder.context.statement.type.dal.ExplainStatementContext;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.merge.result.MergedResult;
+import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.infra.metadata.database.rule.RuleMetaData;
+import org.apache.shardingsphere.infra.session.query.QueryContext;
 import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
 import org.apache.shardingsphere.parser.rule.SQLParserRule;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ExplainStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowColumnsStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowCreateTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.SQLStatementAttributes;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.type.ColumnInResultSetSQLStatementAttribute;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.attribute.type.TableInResultSetSQLStatementAttribute;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,8 +42,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -59,57 +60,52 @@ class EncryptDALResultDecoratorTest {
     private SQLStatementContext sqlStatementContext;
     
     @Test
-    void assertMergedResultWithExplainStatement() {
-        sqlStatementContext = getExplainStatementContext();
-        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(mock(RuleMetaData.class));
-        assertThat(decorator.decorate(mock(MergedResult.class), sqlStatementContext, rule), instanceOf(EncryptShowColumnsMergedResult.class));
-    }
-    
-    @Test
     void assertMergedResultWithShowColumnsStatement() {
-        sqlStatementContext = getShowColumnsStatementContext();
-        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(mock(RuleMetaData.class));
-        assertThat(decorator.decorate(mock(MergedResult.class), sqlStatementContext, rule), instanceOf(EncryptShowColumnsMergedResult.class));
+        sqlStatementContext = mockColumnInResultSetSQLStatementAttributeContext();
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.getSqlStatementContext()).thenReturn(sqlStatementContext);
+        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(mock(ShardingSphereMetaData.class));
+        assertThat(decorator.decorate(mock(MergedResult.class), queryContext, rule), isA(EncryptShowColumnsMergedResult.class));
     }
     
     @Test
     void assertMergedResultWithShowCreateTableStatement() {
-        sqlStatementContext = mockShowCreateTableStatementContext();
+        sqlStatementContext = mockTableInfoInResultSetAvailableStatementContext();
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.getSqlStatementContext()).thenReturn(sqlStatementContext);
+        ShardingSphereMetaData metaData = mock(ShardingSphereMetaData.class);
         RuleMetaData ruleMetaData = mock(RuleMetaData.class);
         when(ruleMetaData.getSingleRule(SQLParserRule.class)).thenReturn(mock(SQLParserRule.class));
-        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(ruleMetaData);
-        assertThat(decorator.decorate(mock(MergedResult.class), sqlStatementContext, rule), instanceOf(EncryptShowCreateTableMergedResult.class));
+        when(metaData.getGlobalRuleMetaData()).thenReturn(ruleMetaData);
+        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(metaData);
+        assertThat(decorator.decorate(mock(MergedResult.class), queryContext, rule), isA(EncryptShowCreateTableMergedResult.class));
     }
     
     @Test
     void assertMergedResultWithOtherStatement() {
-        sqlStatementContext = mock(SQLStatementContext.class);
-        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(mock(RuleMetaData.class));
-        assertThat(decorator.decorate(mock(MergedResult.class), sqlStatementContext, rule), instanceOf(MergedResult.class));
+        sqlStatementContext = mock(SQLStatementContext.class, RETURNS_DEEP_STUBS);
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.getSqlStatementContext()).thenReturn(sqlStatementContext);
+        EncryptDALResultDecorator decorator = new EncryptDALResultDecorator(mock(ShardingSphereMetaData.class));
+        assertThat(decorator.decorate(mock(MergedResult.class), queryContext, rule), isA(MergedResult.class));
     }
     
-    private SQLStatementContext getExplainStatementContext() {
-        ExplainStatementContext result = mock(ExplainStatementContext.class, RETURNS_DEEP_STUBS);
-        SimpleTableSegment simpleTableSegment = new SimpleTableSegment(new TableNameSegment(1, 7, new IdentifierValue("foo_tbl")));
-        when(result.getTablesContext().getSimpleTables()).thenReturn(Collections.singleton(simpleTableSegment));
-        when(result.getSqlStatement()).thenReturn(mock(ExplainStatement.class));
-        return result;
-    }
-    
-    private SQLStatementContext getShowColumnsStatementContext() {
+    private SQLStatementContext mockColumnInResultSetSQLStatementAttributeContext() {
         SQLStatementContext result = mock(SQLStatementContext.class, RETURNS_DEEP_STUBS);
         SimpleTableSegment simpleTableSegment = new SimpleTableSegment(new TableNameSegment(1, 7, new IdentifierValue("foo_tbl")));
         when(result.getTablesContext().getSimpleTables()).thenReturn(Collections.singleton(simpleTableSegment));
-        when(result.getSqlStatement()).thenReturn(mock(ShowColumnsStatement.class));
+        when(result.getSqlStatement().getAttributes()).thenReturn(new SQLStatementAttributes(new ColumnInResultSetSQLStatementAttribute(1)));
         return result;
     }
     
-    private SQLStatementContext mockShowCreateTableStatementContext() {
-        SQLStatementContext result = mock(CommonSQLStatementContext.class, RETURNS_DEEP_STUBS);
-        when(result.getDatabaseType()).thenReturn(databaseType);
+    private SQLStatementContext mockTableInfoInResultSetAvailableStatementContext() {
+        SQLStatementContext result = mock(SQLStatementContext.class, RETURNS_DEEP_STUBS);
+        when(result.getSqlStatement().getDatabaseType()).thenReturn(databaseType);
         SimpleTableSegment simpleTableSegment = new SimpleTableSegment(new TableNameSegment(1, 7, new IdentifierValue("foo_tbl")));
         when(result.getTablesContext().getSimpleTables()).thenReturn(Collections.singleton(simpleTableSegment));
-        when(result.getSqlStatement()).thenReturn(mock(ShowCreateTableStatement.class));
+        SQLStatement sqlStatement = mock(SQLStatement.class);
+        when(sqlStatement.getAttributes()).thenReturn(new SQLStatementAttributes(new TableInResultSetSQLStatementAttribute(2)));
+        when(result.getSqlStatement()).thenReturn(sqlStatement);
         return result;
     }
 }

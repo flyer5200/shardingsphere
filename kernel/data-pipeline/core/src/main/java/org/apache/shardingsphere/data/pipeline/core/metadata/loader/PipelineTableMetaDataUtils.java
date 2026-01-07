@@ -23,7 +23,7 @@ import org.apache.shardingsphere.data.pipeline.core.exception.job.TableNotFoundW
 import org.apache.shardingsphere.data.pipeline.core.metadata.model.PipelineColumnMetaData;
 import org.apache.shardingsphere.data.pipeline.core.metadata.model.PipelineIndexMetaData;
 import org.apache.shardingsphere.data.pipeline.core.metadata.model.PipelineTableMetaData;
-import org.apache.shardingsphere.infra.exception.core.ShardingSpherePreconditions;
+import org.apache.shardingsphere.infra.exception.ShardingSpherePreconditions;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -55,7 +55,7 @@ public final class PipelineTableMetaDataUtils {
             return primaryKeys.stream().map(tableMetaData::getColumnMetaData).collect(Collectors.toList());
         }
         for (PipelineIndexMetaData each : tableMetaData.getUniqueIndexes()) {
-            if (each.getColumns().stream().anyMatch(PipelineColumnMetaData::isNullable)) {
+            if (each.getColumns().get(0).isNullable()) {
                 continue;
             }
             return each.getColumns();

@@ -29,14 +29,8 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
-            <artifactId>shardingsphere-parser-sql-hive</artifactId>
+            <artifactId>shardingsphere-parser-sql-engine-hive</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-jdbc</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

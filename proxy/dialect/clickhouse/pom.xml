@@ -29,15 +29,8 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
-            <artifactId>shardingsphere-parser-sql-clickhouse</artifactId>
+            <artifactId>shardingsphere-parser-sql-engine-clickhouse</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        
-        <dependency>
-            <groupId>com.clickhouse</groupId>
-            <artifactId>clickhouse-jdbc</artifactId>
-            <classifier>http</classifier>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

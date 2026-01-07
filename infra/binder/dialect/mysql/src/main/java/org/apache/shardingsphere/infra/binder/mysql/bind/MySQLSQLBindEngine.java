@@ -19,15 +19,19 @@ package org.apache.shardingsphere.infra.binder.mysql.bind;
 
 import org.apache.shardingsphere.infra.binder.engine.DialectSQLBindEngine;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
+import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLLoadDataStatementBinder;
+import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLLoadXMLStatementBinder;
 import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLOptimizeTableStatementBinder;
 import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLShowColumnsStatementBinder;
 import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLShowCreateTableStatementBinder;
 import org.apache.shardingsphere.infra.binder.mysql.bind.type.MySQLShowIndexStatementBinder;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.OptimizeTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowColumnsStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowCreateTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowIndexStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.show.column.MySQLShowColumnsStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.show.index.MySQLShowIndexStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.show.table.MySQLShowCreateTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dal.table.MySQLOptimizeTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dml.MySQLLoadDataStatement;
+import org.apache.shardingsphere.sql.parser.statement.mysql.dml.MySQLLoadXMLStatement;
 
 import java.util.Optional;
 
@@ -38,17 +42,23 @@ public final class MySQLSQLBindEngine implements DialectSQLBindEngine {
     
     @Override
     public Optional<SQLStatement> bind(final SQLStatement sqlStatement, final SQLStatementBinderContext binderContext) {
-        if (sqlStatement instanceof OptimizeTableStatement) {
-            return Optional.of(new MySQLOptimizeTableStatementBinder().bind((OptimizeTableStatement) sqlStatement, binderContext));
+        if (sqlStatement instanceof MySQLLoadDataStatement) {
+            return Optional.of(new MySQLLoadDataStatementBinder().bind((MySQLLoadDataStatement) sqlStatement, binderContext));
         }
-        if (sqlStatement instanceof ShowCreateTableStatement) {
-            return Optional.of(new MySQLShowCreateTableStatementBinder().bind((ShowCreateTableStatement) sqlStatement, binderContext));
+        if (sqlStatement instanceof MySQLLoadXMLStatement) {
+            return Optional.of(new MySQLLoadXMLStatementBinder().bind((MySQLLoadXMLStatement) sqlStatement, binderContext));
         }
-        if (sqlStatement instanceof ShowColumnsStatement) {
-            return Optional.of(new MySQLShowColumnsStatementBinder().bind((ShowColumnsStatement) sqlStatement, binderContext));
+        if (sqlStatement instanceof MySQLOptimizeTableStatement) {
+            return Optional.of(new MySQLOptimizeTableStatementBinder().bind((MySQLOptimizeTableStatement) sqlStatement, binderContext));
         }
-        if (sqlStatement instanceof ShowIndexStatement) {
-            return Optional.of(new MySQLShowIndexStatementBinder().bind((ShowIndexStatement) sqlStatement, binderContext));
+        if (sqlStatement instanceof MySQLShowCreateTableStatement) {
+            return Optional.of(new MySQLShowCreateTableStatementBinder().bind((MySQLShowCreateTableStatement) sqlStatement, binderContext));
+        }
+        if (sqlStatement instanceof MySQLShowColumnsStatement) {
+            return Optional.of(new MySQLShowColumnsStatementBinder().bind((MySQLShowColumnsStatement) sqlStatement, binderContext));
+        }
+        if (sqlStatement instanceof MySQLShowIndexStatement) {
+            return Optional.of(new MySQLShowIndexStatementBinder().bind((MySQLShowIndexStatement) sqlStatement, binderContext));
         }
         return Optional.empty();
     }

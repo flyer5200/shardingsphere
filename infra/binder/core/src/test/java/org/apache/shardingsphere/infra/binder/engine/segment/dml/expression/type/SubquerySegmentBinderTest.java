@@ -20,10 +20,10 @@ package org.apache.shardingsphere.infra.binder.engine.segment.dml.expression.typ
 import com.cedarsoftware.util.CaseInsensitiveMap.CaseInsensitiveString;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.TableSegmentBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.type.SimpleTableSegmentBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.hint.HintValueContext;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereColumn;
@@ -41,7 +41,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound.TableSegmentBoundInfo;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableNameSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 import org.junit.jupiter.api.Test;
 
@@ -49,9 +49,9 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -64,7 +64,7 @@ class SubquerySegmentBinderTest {
     
     @Test
     void assertBind() {
-        SelectStatement selectStatement = new SelectStatement();
+        SelectStatement selectStatement = new SelectStatement(databaseType);
         ColumnSegment columnSegment = new ColumnSegment(58, 65, new IdentifierValue("order_id"));
         ProjectionsSegment projectionsSegment = new ProjectionsSegment(58, 65);
         projectionsSegment.getProjections().add(new ColumnProjectionSegment(columnSegment));
@@ -73,7 +73,7 @@ class SubquerySegmentBinderTest {
         ExpressionSegment whereExpressionSegment = new ColumnSegment(86, 91, new IdentifierValue("status"));
         selectStatement.setWhere(new WhereSegment(80, 102, whereExpressionSegment));
         SubquerySegment subquerySegment = new SubquerySegment(39, 103, selectStatement, "order_id = (SELECT order_id FROM t_order WHERE status = 'SUBMIT')");
-        SQLStatementBinderContext sqlStatementBinderContext = new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), databaseType, selectStatement);
+        SQLStatementBinderContext sqlStatementBinderContext = new SQLStatementBinderContext(createMetaData(), "foo_db", new HintValueContext(), selectStatement);
         ColumnSegment boundNameColumn = new ColumnSegment(7, 13, new IdentifierValue("user_id"));
         boundNameColumn.setColumnBoundInfo(new ColumnSegmentBoundInfo(new TableSegmentBoundInfo(
                 new IdentifierValue("foo_db"), new IdentifierValue("foo_db")), new IdentifierValue("t_order_item"), new IdentifierValue("user_id"), TableSourceType.TEMPORARY_TABLE));
@@ -83,10 +83,10 @@ class SubquerySegmentBinderTest {
         SubquerySegment actual = SubquerySegmentBinder.bind(subquerySegment, sqlStatementBinderContext, outerTableBinderContexts);
         assertNotNull(actual.getSelect());
         assertTrue(actual.getSelect().getFrom().isPresent());
-        assertThat(actual.getSelect().getFrom().get(), instanceOf(SimpleTableSegment.class));
+        assertThat(actual.getSelect().getFrom().get(), isA(SimpleTableSegment.class));
         assertThat(((SimpleTableSegment) actual.getSelect().getFrom().get()).getTableName().getIdentifier().getValue(), is("t_order"));
         assertTrue(actual.getSelect().getWhere().isPresent());
-        assertThat(actual.getSelect().getWhere().get().getExpr(), instanceOf(ColumnSegment.class));
+        assertThat(actual.getSelect().getWhere().get().getExpr(), isA(ColumnSegment.class));
         assertThat(((ColumnSegment) actual.getSelect().getWhere().get().getExpr()).getIdentifier().getValue(), is("status"));
         assertNotNull(((ColumnSegment) actual.getSelect().getWhere().get().getExpr()).getColumnBoundInfo());
         assertThat(((ColumnSegment) actual.getSelect().getWhere().get().getExpr()).getColumnBoundInfo().getOriginalColumn().getValue(), is("status"));
@@ -96,7 +96,7 @@ class SubquerySegmentBinderTest {
         assertNotNull(actual.getSelect().getProjections());
         assertThat(actual.getSelect().getProjections().getProjections().size(), is(1));
         ProjectionSegment column = actual.getSelect().getProjections().getProjections().iterator().next();
-        assertThat(column, instanceOf(ColumnProjectionSegment.class));
+        assertThat(column, isA(ColumnProjectionSegment.class));
         assertThat(((ColumnProjectionSegment) column).getColumn().getIdentifier().getValue(), is("order_id"));
         assertNotNull(((ColumnProjectionSegment) column).getColumn().getColumnBoundInfo());
         assertThat(((ColumnProjectionSegment) column).getColumn().getColumnBoundInfo().getOriginalColumn().getValue(), is("order_id"));

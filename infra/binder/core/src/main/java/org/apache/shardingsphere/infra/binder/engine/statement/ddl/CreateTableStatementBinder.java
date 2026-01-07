@@ -29,8 +29,8 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyU
 import org.apache.shardingsphere.infra.binder.engine.statement.dml.SelectStatementBinder;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.ddl.column.ColumnDefinitionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.table.CreateTableStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -52,12 +52,11 @@ public final class CreateTableStatementBinder implements SQLStatementBinder<Crea
     
     private CreateTableStatement copy(final CreateTableStatement sqlStatement,
                                       final SimpleTableSegment boundTable, final SelectStatement boundSelectStatement, final Collection<ColumnDefinitionSegment> boundColumnDefinitions) {
-        CreateTableStatement result = new CreateTableStatement();
+        CreateTableStatement result = new CreateTableStatement(sqlStatement.getDatabaseType());
         result.setTable(boundTable);
         result.setSelectStatement(boundSelectStatement);
         result.getColumnDefinitions().addAll(boundColumnDefinitions);
         result.getConstraintDefinitions().addAll(sqlStatement.getConstraintDefinitions());
-        result.addParameterMarkers(sqlStatement.getParameterMarkers());
         result.setIfNotExists(sqlStatement.isIfNotExists());
         result.getColumns().addAll(sqlStatement.getColumns());
         sqlStatement.getLikeTable().ifPresent(result::setLikeTable);

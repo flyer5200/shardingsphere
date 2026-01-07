@@ -17,9 +17,9 @@
 
 package org.apache.shardingsphere.sharding.merge.dql.pagination;
 
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
 import org.apache.shardingsphere.infra.config.props.ConfigurationProperties;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.executor.sql.execute.result.query.QueryResult;
 import org.apache.shardingsphere.infra.merge.result.MergedResult;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
@@ -34,11 +34,9 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.Bina
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.simple.LiteralExpressionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.subquery.SubquerySegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionsSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.pagination.rownum.NumberLiteralRowNumberValueSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.pagination.top.TopProjectionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SubqueryTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 import org.junit.jupiter.api.Test;
 
@@ -58,21 +56,20 @@ class RowNumberDecoratorMergedResultTest {
     
     @Test
     void assertNextForSkipAll() throws SQLException {
-        SelectStatement selectStatement = new SelectStatement();
+        SelectStatement selectStatement = new SelectStatement(databaseType);
         selectStatement.setProjections(new ProjectionsSegment(0, 0));
         WhereSegment whereSegment = mock(WhereSegment.class);
         BinaryOperationExpression binaryOperationExpression = mock(BinaryOperationExpression.class);
         when(binaryOperationExpression.getLeft()).thenReturn(new ColumnSegment(0, 0, new IdentifierValue("row_id")));
         when(binaryOperationExpression.getRight()).thenReturn(new LiteralExpressionSegment(0, 0, Integer.MAX_VALUE));
         when(binaryOperationExpression.getOperator()).thenReturn(">=");
+        when(binaryOperationExpression.getText()).thenReturn("");
         when(whereSegment.getExpr()).thenReturn(binaryOperationExpression);
         SubqueryTableSegment subqueryTableSegment = mock(SubqueryTableSegment.class);
         SubquerySegment subquerySegment = mock(SubquerySegment.class);
         SelectStatement subSelectStatement = mock(SelectStatement.class);
+        when(subSelectStatement.getDatabaseType()).thenReturn(databaseType);
         ProjectionsSegment subProjectionsSegment = mock(ProjectionsSegment.class);
-        TopProjectionSegment topProjectionSegment = mock(TopProjectionSegment.class);
-        when(topProjectionSegment.getAlias()).thenReturn("row_id");
-        when(subProjectionsSegment.getProjections()).thenReturn(Collections.singletonList(topProjectionSegment));
         when(subSelectStatement.getProjections()).thenReturn(subProjectionsSegment);
         when(subquerySegment.getSelect()).thenReturn(subSelectStatement);
         when(subqueryTableSegment.getSubquery()).thenReturn(subquerySegment);
@@ -81,9 +78,12 @@ class RowNumberDecoratorMergedResultTest {
         ShardingDQLResultMerger resultMerger = new ShardingDQLResultMerger(databaseType);
         ShardingSphereDatabase database = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
         when(database.getName()).thenReturn("foo_db");
-        SelectStatementContext selectStatementContext = new SelectStatementContext(databaseType, selectStatement, null, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
-        MergedResult actual = resultMerger.merge(Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database,
-                mock(ConnectionContext.class));
+        SelectStatementContext selectStatementContext = new SelectStatementContext(selectStatement, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
+        MergedResult actual = resultMerger.merge(
+                Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database, mock(ConnectionContext.class));
+        for (int i = 0; i < 8; i++) {
+            assertTrue(actual.next());
+        }
         assertFalse(actual.next());
     }
     
@@ -92,9 +92,9 @@ class RowNumberDecoratorMergedResultTest {
         ShardingDQLResultMerger resultMerger = new ShardingDQLResultMerger(databaseType);
         ShardingSphereDatabase database = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
         when(database.getName()).thenReturn("foo_db");
-        SelectStatement selectStatement = new SelectStatement();
+        SelectStatement selectStatement = new SelectStatement(databaseType);
         selectStatement.setProjections(new ProjectionsSegment(0, 0));
-        SelectStatementContext selectStatementContext = new SelectStatementContext(databaseType, selectStatement, null, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
+        SelectStatementContext selectStatementContext = new SelectStatementContext(selectStatement, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
         MergedResult actual = resultMerger.merge(Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database,
                 mock(ConnectionContext.class));
         for (int i = 0; i < 8; i++) {
@@ -104,57 +104,30 @@ class RowNumberDecoratorMergedResultTest {
     }
     
     @Test
-    void assertNextForRowCountBoundOpenedFalse() throws SQLException {
-        SelectStatement selectStatement = new SelectStatement();
-        selectStatement.setProjections(new ProjectionsSegment(0, 0));
-        WhereSegment whereSegment = mock(WhereSegment.class);
-        BinaryOperationExpression binaryOperationExpression = mock(BinaryOperationExpression.class);
-        when(binaryOperationExpression.getLeft()).thenReturn(new ColumnSegment(0, 0, new IdentifierValue("row_id")));
-        when(binaryOperationExpression.getRight()).thenReturn(new LiteralExpressionSegment(0, 0, 2));
-        when(binaryOperationExpression.getOperator()).thenReturn(">=");
-        when(whereSegment.getExpr()).thenReturn(binaryOperationExpression);
-        SubqueryTableSegment subqueryTableSegment = mock(SubqueryTableSegment.class);
-        SubquerySegment subquerySegment = mock(SubquerySegment.class);
-        SelectStatement subSelectStatement = mock(SelectStatement.class);
-        ProjectionsSegment subProjectionsSegment = mock(ProjectionsSegment.class);
-        TopProjectionSegment topProjectionSegment = mock(TopProjectionSegment.class);
-        when(topProjectionSegment.getAlias()).thenReturn("row_id");
-        when(topProjectionSegment.getTop()).thenReturn(new NumberLiteralRowNumberValueSegment(0, 0, 4L, false));
-        when(subProjectionsSegment.getProjections()).thenReturn(Collections.singletonList(topProjectionSegment));
-        when(subSelectStatement.getProjections()).thenReturn(subProjectionsSegment);
-        when(subquerySegment.getSelect()).thenReturn(subSelectStatement);
-        when(subqueryTableSegment.getSubquery()).thenReturn(subquerySegment);
-        selectStatement.setFrom(subqueryTableSegment);
-        selectStatement.setWhere(whereSegment);
-        ShardingDQLResultMerger resultMerger = new ShardingDQLResultMerger(databaseType);
-        ShardingSphereDatabase database = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
-        when(database.getName()).thenReturn("foo_db");
-        SelectStatementContext selectStatementContext = new SelectStatementContext(databaseType, selectStatement, null, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
-        MergedResult actual = resultMerger.merge(Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database,
-                mock(ConnectionContext.class));
-        assertTrue(actual.next());
-        assertTrue(actual.next());
-        assertFalse(actual.next());
+    void assertNextForRowCountWithOpenInterval() throws SQLException {
+        assertNextForRowCountWithInterval(true);
     }
     
     @Test
-    void assertNextForRowCountBoundOpenedTrue() throws SQLException {
-        SelectStatement selectStatement = new SelectStatement();
+    void assertNextForRowCountWithClosedInterval() throws SQLException {
+        assertNextForRowCountWithInterval(false);
+    }
+    
+    private void assertNextForRowCountWithInterval(final boolean isOpenInterval) throws SQLException {
+        SelectStatement selectStatement = new SelectStatement(databaseType);
         selectStatement.setProjections(new ProjectionsSegment(0, 0));
         WhereSegment whereSegment = mock(WhereSegment.class);
         BinaryOperationExpression binaryOperationExpression = mock(BinaryOperationExpression.class);
         when(binaryOperationExpression.getLeft()).thenReturn(new ColumnSegment(0, 0, new IdentifierValue("row_id")));
         when(binaryOperationExpression.getRight()).thenReturn(new LiteralExpressionSegment(0, 0, 2));
-        when(binaryOperationExpression.getOperator()).thenReturn(">=");
+        when(binaryOperationExpression.getOperator()).thenReturn(isOpenInterval ? ">" : ">=");
+        when(binaryOperationExpression.getText()).thenReturn("");
         when(whereSegment.getExpr()).thenReturn(binaryOperationExpression);
         SubqueryTableSegment subqueryTableSegment = mock(SubqueryTableSegment.class);
         SubquerySegment subquerySegment = mock(SubquerySegment.class);
         SelectStatement subSelectStatement = mock(SelectStatement.class);
+        when(subSelectStatement.getDatabaseType()).thenReturn(databaseType);
         ProjectionsSegment subProjectionsSegment = mock(ProjectionsSegment.class);
-        TopProjectionSegment topProjectionSegment = mock(TopProjectionSegment.class);
-        when(topProjectionSegment.getAlias()).thenReturn("row_id");
-        when(topProjectionSegment.getTop()).thenReturn(new NumberLiteralRowNumberValueSegment(0, 0, 4L, true));
-        when(subProjectionsSegment.getProjections()).thenReturn(Collections.singletonList(topProjectionSegment));
         when(subSelectStatement.getProjections()).thenReturn(subProjectionsSegment);
         when(subquerySegment.getSelect()).thenReturn(subSelectStatement);
         when(subqueryTableSegment.getSubquery()).thenReturn(subquerySegment);
@@ -163,12 +136,12 @@ class RowNumberDecoratorMergedResultTest {
         ShardingDQLResultMerger resultMerger = new ShardingDQLResultMerger(databaseType);
         ShardingSphereDatabase database = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
         when(database.getName()).thenReturn("foo_db");
-        SelectStatementContext selectStatementContext = new SelectStatementContext(databaseType, selectStatement, null, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
-        MergedResult actual =
-                resultMerger.merge(Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database, mock(ConnectionContext.class));
-        assertTrue(actual.next());
-        assertTrue(actual.next());
-        assertTrue(actual.next());
+        SelectStatementContext selectStatementContext = new SelectStatementContext(selectStatement, createShardingSphereMetaData(database), "foo_db", Collections.emptyList());
+        MergedResult actual = resultMerger.merge(
+                Arrays.asList(mockQueryResult(), mockQueryResult(), mockQueryResult(), mockQueryResult()), selectStatementContext, database, mock(ConnectionContext.class));
+        for (int i = 0; i < 8; i++) {
+            assertTrue(actual.next());
+        }
         assertFalse(actual.next());
     }
     

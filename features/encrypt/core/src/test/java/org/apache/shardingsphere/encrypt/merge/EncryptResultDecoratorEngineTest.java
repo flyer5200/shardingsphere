@@ -30,7 +30,7 @@ import org.apache.shardingsphere.infra.merge.engine.decorator.ResultDecorator;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.spi.type.ordered.OrderedSPILoader;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ExplainStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dal.ExplainStatement;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,8 +39,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -62,7 +62,7 @@ class EncryptResultDecoratorEngineTest {
         Optional<ResultDecorator<EncryptRule>> actual =
                 engine.newInstance(mock(ShardingSphereMetaData.class), database, mock(ConfigurationProperties.class), mock(SelectStatementContext.class, RETURNS_DEEP_STUBS));
         assertTrue(actual.isPresent());
-        assertThat(actual.get(), instanceOf(EncryptDQLResultDecorator.class));
+        assertThat(actual.get(), isA(EncryptDQLResultDecorator.class));
     }
     
     @Test
@@ -72,7 +72,7 @@ class EncryptResultDecoratorEngineTest {
         EncryptResultDecoratorEngine engine = (EncryptResultDecoratorEngine) OrderedSPILoader.getServices(ResultProcessEngine.class, Collections.singleton(rule)).get(rule);
         Optional<ResultDecorator<EncryptRule>> actual = engine.newInstance(mock(ShardingSphereMetaData.class), database, mock(ConfigurationProperties.class), sqlStatementContext);
         assertTrue(actual.isPresent());
-        assertThat(actual.get(), instanceOf(EncryptDALResultDecorator.class));
+        assertThat(actual.get(), isA(EncryptDALResultDecorator.class));
     }
     
     @Test

@@ -32,10 +32,10 @@ import org.apache.shardingsphere.infra.exception.kernel.metadata.rule.InvalidRul
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.rule.RuleMetaData;
 import org.apache.shardingsphere.infra.spi.exception.ServiceProviderNotFoundException;
+import org.apache.shardingsphere.infra.util.props.PropertiesBuilder;
+import org.apache.shardingsphere.infra.util.props.PropertiesBuilder.Property;
 import org.apache.shardingsphere.mode.manager.ContextManager;
 import org.apache.shardingsphere.mode.persist.service.MetaDataManagerPersistService;
-import org.apache.shardingsphere.test.util.PropertiesBuilder;
-import org.apache.shardingsphere.test.util.PropertiesBuilder.Property;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -59,20 +59,23 @@ class CreateEncryptRuleExecutorTest {
     void assertExecuteUpdateWithDuplicateEncryptRule() {
         EncryptRule rule = mock(EncryptRule.class);
         when(rule.getAllTableNames()).thenReturn(Arrays.asList("t_user", "t_order"));
-        assertThrows(DuplicateRuleException.class, () -> new DistSQLUpdateExecuteEngine(createSQLStatement(false, "MD5"), "foo_db", mockContextManager(rule)).executeUpdate());
+        assertThrows(DuplicateRuleException.class,
+                () -> new DistSQLUpdateExecuteEngine(createSQLStatement(false, "MD5"), "foo_db", mockContextManager(rule), null).executeUpdate());
     }
     
     @Test
     void assertExecuteUpdateWithoutToBeCreatedEncryptors() {
         EncryptRule rule = mock(EncryptRule.class);
-        assertThrows(ServiceProviderNotFoundException.class, () -> new DistSQLUpdateExecuteEngine(createSQLStatement(false, "INVALID_TYPE"), "foo_db", mockContextManager(rule)).executeUpdate());
+        assertThrows(ServiceProviderNotFoundException.class,
+                () -> new DistSQLUpdateExecuteEngine(createSQLStatement(false, "INVALID_TYPE"), "foo_db", mockContextManager(rule), null).executeUpdate());
     }
     
     @Test
     void assertExecuteUpdateWithConflictedColumnNames() {
         EncryptRule rule = mock(EncryptRule.class);
         when(rule.getConfiguration()).thenReturn(getCurrentRuleConfiguration());
-        assertThrows(InvalidRuleConfigurationException.class, () -> new DistSQLUpdateExecuteEngine(createConflictColumnNameSQLStatement(), "foo_db", mockContextManager(rule)).executeUpdate());
+        assertThrows(InvalidRuleConfigurationException.class,
+                () -> new DistSQLUpdateExecuteEngine(createConflictColumnNameSQLStatement(), "foo_db", mockContextManager(rule), null).executeUpdate());
     }
     
     @Test
@@ -80,7 +83,7 @@ class CreateEncryptRuleExecutorTest {
         CreateEncryptRuleStatement sqlStatement = createWrongAESEncryptorSQLStatement();
         EncryptRule rule = mock(EncryptRule.class);
         when(rule.getConfiguration()).thenReturn(getCurrentRuleConfiguration());
-        assertThrows(AlgorithmInitializationException.class, () -> new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", mockContextManager(rule)).executeUpdate());
+        assertThrows(AlgorithmInitializationException.class, () -> new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", mockContextManager(rule), null).executeUpdate());
     }
     
     private CreateEncryptRuleStatement createWrongAESEncryptorSQLStatement() {
@@ -102,7 +105,7 @@ class CreateEncryptRuleExecutorTest {
         EncryptRule rule = mock(EncryptRule.class);
         CreateEncryptRuleStatement sqlStatement = createAESEncryptRuleSQLStatement(true);
         ContextManager contextManager = mockContextManager(rule);
-        new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", contextManager).executeUpdate();
+        new DistSQLUpdateExecuteEngine(sqlStatement, "foo_db", contextManager, null).executeUpdate();
         MetaDataManagerPersistService metaDataManagerPersistService = contextManager.getPersistServiceFacade().getModeFacade().getMetaDataManagerService();
         metaDataManagerPersistService.alterRuleConfiguration(any(), ArgumentMatchers.argThat(this::assertIfNotExistsRuleConfiguration));
     }

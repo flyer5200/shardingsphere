@@ -27,8 +27,8 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.infra.binder.engine.statement.dml.SelectStatementBinder;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterViewStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.view.AlterViewStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 
 /**
  * Alter view statement binder.
@@ -45,7 +45,7 @@ public final class AlterViewStatementBinder implements SQLStatementBinder<AlterV
     }
     
     private AlterViewStatement copy(final AlterViewStatement sqlStatement, final SimpleTableSegment boundView, final SelectStatement boundSelect, final SimpleTableSegment boundRenameView) {
-        AlterViewStatement result = new AlterViewStatement();
+        AlterViewStatement result = new AlterViewStatement(sqlStatement.getDatabaseType());
         result.setView(boundView);
         result.setSelect(boundSelect);
         result.setRenameView(boundRenameView);

@@ -16,17 +16,21 @@ ShardingSphere JDBC requires GraalVM Native Image to be built with GraalVM CE as
 JDK through `SDKMAN!`. Same reason applicable to downstream distributions of `GraalVM CE` such as https://sdkman.io/jdks#graal ,
 https://sdkman.io/jdks#nik and https://sdkman.io/jdks#mandrel .
 
-- GraalVM CE For JDK 22.0.2, corresponding to `22.0.2-graalce` of SDKMAN!
+- GraalVM CE For JDK 24.0.2, corresponding to `24.0.2-graalce` of SDKMAN!
 
-Users can still use the old versions of GraalVM CE such as `21.0.2-graalce` on SDKMAN! to build the GraalVM Native Image product of ShardingSphere. 
-However, this will cause the failure of building the GraalVM Native Image when integrating some third-party dependencies. 
-A typical example is related to the `org.apache.hive:hive-jdbc:4.0.1` HiveServer2 JDBC Driver, which uses AWT-related classes. 
-GraalVM CE only supports AWT for GraalVM CE For JDK22 and higher versions.
+Users can still use old versions of Oracle GraalVM such as `21.0.8-graal` on SDKMAN! to build ShardingSphere's GraalVM Native Image product.
+But this will cause the failure of building GraalVM Native Image when integrating some third-party dependencies.
+Classification discussion,
+1. Developers are using `org.apache.hive:hive-jdbc:4.0.1` related to HiveServer2 JDBC Driver. Since HiveServer2 JDBC Driver uses AWT-related classes,
+   and `GraalVM CE`'s support for AWT-related classes is only in GraalVM CE For JDK22 and higher, this will destroy the construction of GraalVM Native Image.
 
 ```shell
 com.sun.beans.introspect.ClassInfo was unintentionally initialized at build time. To see why com.sun.beans.introspect.ClassInfo got initialized use --trace-class-initialization=com.sun.beans.introspect.ClassInfo
 java.beans.Introspector was unintentionally initialized at build time. To see why java.beans.Introspector got initialized use --trace-class-initialization=java.beans.Introspector
 ```
+
+2. The developer is using an old version of `GraalVM CE` or a downstream distribution of `GraalVM CE` that does not include the backported patch of https://github.com/graalvm/graalvm-community-jdk21u/pull/23 .
+   In this case, the developer needs to write more JSON related to GraalVM Reachability Metadata that can be recognized by the old version of `GraalVM CE`.
 
 ### Maven Ecology
 
@@ -49,11 +53,13 @@ and the documentation of GraalVM Native Build Tools shall prevail.
              <plugin>
                  <groupId>org.graalvm.buildtools</groupId>
                  <artifactId>native-maven-plugin</artifactId>
-                 <version>0.10.6</version>
+                 <version>0.11.3</version>
                  <extensions>true</extensions>
                  <configuration>
                     <buildArgs>
+                       <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                        <buildArg>-H:+AddAllCharsets</buildArg>
+                       <buildArg>-H:+IncludeAllLocales</buildArg>
                     </buildArgs>
                  </configuration>
                  <executions>
@@ -89,21 +95,25 @@ Reference https://github.com/graalvm/native-build-tools/issues/572 .
 
 ```groovy
 plugins {
-   id 'org.graalvm.buildtools.native' version '0.10.6'
+   id 'org.graalvm.buildtools.native' version '0.11.3'
 }
 
 dependencies {
    implementation 'org.apache.shardingsphere:shardingsphere-jdbc:${shardingsphere.version}'
-   implementation(group: 'org.graalvm.buildtools', name: 'graalvm-reachability-metadata', version: '0.10.6', classifier: 'repository', ext: 'zip')
+   implementation(group: 'org.graalvm.buildtools', name: 'graalvm-reachability-metadata', version: '0.11.3', classifier: 'repository', ext: 'zip')
 }
 
 graalvmNative {
    binaries {
       main {
+         buildArgs.add('-H:+UnlockExperimentalVMOptions')
          buildArgs.add('-H:+AddAllCharsets')
+         buildArgs.add('-H:+IncludeAllLocales')
       }
       test {
+         buildArgs.add('-H:+UnlockExperimentalVMOptions')
          buildArgs.add('-H:+AddAllCharsets')
+         buildArgs.add('-H:+IncludeAllLocales')
       }
    }
    metadataRepository {
@@ -190,16 +200,18 @@ rules:
            algorithmClassName: org.example.test.TestShardingAlgorithmFixture
 ```
 
-Add the following content to `src/main/resources/META-INF/native-image/exmaple-test-metadata/reflect-config.json` to used 
+Add the following content to `src/main/resources/META-INF/native-image/exmaple-test-metadata/reachability-metadata.json` to used 
 normally under GraalVM Native Image.
 
 ```json
-[
 {
-   "name":"org.example.test.TestShardingAlgorithmFixture",
-   "methods":[{"name":"<init>","parameterTypes":[] }]
+   "reflection": [
+      {
+         "type":"org.example.test.TestShardingAlgorithmFixture",
+         "methods":[{"name":"<init>","parameterTypes":[] }]
+      }
+   ]
 }
-]
 ```
 
 2. For the `ReadWrite Splitting` feature, you need to use other implementations of `Row Value Expressions` SPI to configure 
@@ -248,7 +260,7 @@ Caused by: java.io.UnsupportedEncodingException: Codepage Cp1252 is not supporte
 5. To discuss the steps required to use XA distributed transactions under the GraalVM Native Image of ShardingSphere JDBC, 
 additional known prerequisites need to be introduced,
    - `org.apache.shardingsphere.transaction.xa.jta.datasource.swapper.DataSourceSwapper#loadXADataSource(String)` will instantiate the `javax.sql.XADataSource` implementation class of each database driver through `java.lang.Class#getDeclaredConstructors`.
-   - The full class name of the `javax.sql.XADataSource` implementation class of each database driver is stored in the metadata of ShardingSphere by implementing the SPI of `org.apache.shardingsphere.transaction.xa.jta.datasource.properties.XADataSourceDefinition`.
+   - The full class name of the `javax.sql.XADataSource` implementation class of each database driver is stored in the metadata of ShardingSphere by implementing the SPI of `org.apache.shardingsphere.database.connector.core.metadata.database.metadata.option.transaction.DialectTransactionOption`.
 
 In the GraalVM Native Image, this actually requires the definition of the GraalVM Reachability Metadata of the third-party dependencies,
 while ShardingSphere itself only provides the corresponding GraalVM Reachability Metadata for `com.h2database:h2`.
@@ -256,90 +268,66 @@ while ShardingSphere itself only provides the corresponding GraalVM Reachability
 GraalVM Reachability Metadata of other database drivers such as `com.mysql:mysql-connector-j` should be defined by themselves,
 or the corresponding JSON should be submitted to https://github.com/oracle/graalvm-reachability-metadata .
 
-Take the `com.mysql.cj.jdbc.MysqlXADataSource` class of `com.mysql:mysql-connector-j:9.0.0` as an example,
-which is the implementation of `javax.sql.XADataSource` of MySQL JDBC Driver.
-Users need to define the following JSON in the `reflect-config.json` file in the `/META-INF/native-image/com.mysql/mysql-connector-j/9.0.0/` folder of their own project's claapath,
-to define the constructor of `com.mysql.cj.jdbc.MysqlXADataSource` inside the GraalVM Native Image.
+For example, the `com.mysql.cj.jdbc.MysqlXADataSource` class in `com.mysql:mysql-connector-j:9.0.0` implements the `javax.sql.XADataSource` class of the MySQL JDBC Driver.
+Users need to define the following JSON in the `reachability-metadata.json` file in the `/META-INF/native-image/com.mysql/mysql-connector-j/9.0.0/` folder of their project's buildpath.
 
 ```json
-[
 {
-   "condition":{"typeReachable":"com.mysql.cj.jdbc.MysqlXADataSource"},
-   "name":"com.mysql.cj.jdbc.MysqlXADataSource",
-   "allPublicMethods": true,
-   "methods": [{"name":"<init>","parameterTypes":[] }]
+   "reflection": [
+      {
+         "condition": {
+            "typeReached": "com.mysql.cj.jdbc.Driver"
+         },
+         "type": "com.mysql.cj.jdbc.MysqlXADataSource",
+         "allPublicMethods": true,
+         "methods": [
+            {
+               "name": "<init>",
+               "parameterTypes": []
+            }
+         ]
+      }
+   ]
 }
-]
 ```
 
-6. When using the ClickHouse dialect through ShardingSphere JDBC, 
-users need to manually introduce the relevant optional modules and the ClickHouse JDBC driver with the classifier `http`.
-In principle, ShardingSphere's GraalVM Native Image integration does not want to use `com.clickhouse:clickhouse-jdbc` with classifier `all`, 
-because Uber Jar will cause the collection of duplicate GraalVM Reachability Metadata.
-Possible configuration examples are as follows,
+6. ShardingSphere's unit test only uses the Maven module `io.github.linghengqian:hive-server2-jdbc-driver-thin` to verify the availability of HiveServer2 integration under GraalVM Native Image. 
+If developers use `org.apache.hive:hive-jdbc` directly, they should handle dependency conflicts and provide additional GraalVM Reachability Metadata by themselves.
 
-```xml
-<project>
-    <dependencies>
-      <dependency>
-         <groupId>org.apache.shardingsphere</groupId>
-         <artifactId>shardingsphere-jdbc</artifactId>
-         <version>${shardingsphere.version}</version>
-      </dependency>
-       <dependency>
-          <groupId>org.apache.shardingsphere</groupId>
-          <artifactId>shardingsphere-parser-sql-clickhouse</artifactId>
-          <version>${shardingsphere.version}</version>
-      </dependency>
-       <dependency>
-          <groupId>com.clickhouse</groupId>
-          <artifactId>clickhouse-jdbc</artifactId>
-          <version>0.6.3</version>
-          <classifier>http</classifier>
-       </dependency>
-    </dependencies>
-</project>
-```
-
-7. Affected by https://github.com/grpc/grpc-java/issues/10601 , should users incorporate `org.apache.hive:hive-jdbc` into their project,
-it is imperative to create a file named `native-image.properties` within the directory `META-INF/native-image/io.grpc/grpc-netty-shaded` of the classpath,
-containing the following content,
-
-```properties
-Args=--initialize-at-run-time=\
-    io.grpc.netty.shaded.io.netty.channel.ChannelHandlerMask,\
-    io.grpc.netty.shaded.io.netty.channel.nio.AbstractNioChannel,\
-    io.grpc.netty.shaded.io.netty.channel.socket.nio.SelectorProviderUtil,\
-    io.grpc.netty.shaded.io.netty.util.concurrent.DefaultPromise,\
-    io.grpc.netty.shaded.io.netty.util.internal.MacAddressUtil,\
-    io.grpc.netty.shaded.io.netty.util.internal.SystemPropertyUtil,\
-    io.grpc.netty.shaded.io.netty.util.NetUtilInitializations,\
-    io.grpc.netty.shaded.io.netty.channel.AbstractChannel,\
-    io.grpc.netty.shaded.io.netty.util.NetUtil,\
-    io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent,\
-    io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0,\
-    io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline,\
-    io.grpc.netty.shaded.io.netty.channel.DefaultChannelId,\
-    io.grpc.netty.shaded.io.netty.util.ResourceLeakDetector,\
-    io.grpc.netty.shaded.io.netty.channel.AbstractChannelHandlerContext,\
-    io.grpc.netty.shaded.io.netty.channel.ChannelOutboundBuffer,\
-    io.grpc.netty.shaded.io.netty.util.internal.InternalThreadLocalMap,\
-    io.grpc.netty.shaded.io.netty.util.internal.CleanerJava9,\
-    io.grpc.netty.shaded.io.netty.util.internal.StringUtil,\
-    io.grpc.netty.shaded.io.netty.util.internal.CleanerJava6,\
-    io.grpc.netty.shaded.io.netty.buffer.ByteBufUtil$HexUtil,\
-    io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator,\
-    io.grpc.netty.shaded.io.netty.util.concurrent.FastThreadLocalThread,\
-    io.grpc.netty.shaded.io.netty.buffer.PoolArena,\
-    io.grpc.netty.shaded.io.netty.buffer.EmptyByteBuf,\
-    io.grpc.netty.shaded.io.netty.buffer.PoolThreadCache,\
-    io.grpc.netty.shaded.io.netty.util.AttributeKey
-```
-
-ShardingSphere's unit test only uses the Maven module `io.github.linghengqian:hive-server2-jdbc-driver-thin` to verify the availability under GraalVM Native Image.
-
-8. Due to https://github.com/oracle/graal/issues/7979 , 
+7. Due to https://github.com/oracle/graal/issues/7979 , 
 the Oracle JDBC Driver corresponding to the `com.oracle.database.jdbc:ojdbc8` Maven module cannot be used under GraalVM Native Image.
 
-9. Due to https://github.com/apache/doris/issues/9426, when connecting to Apache Doris FE via Shardinghere JDBC,
-   users need to provide GraalVM Reachability Metadata related to the `apache/doris` integration module.
+8. Including but not limited to `com.mysql.cj.LocalizedErrorMessages`,
+   `com.microsoft.sqlserver.jdbc.SQLServerResource`,
+   `org.postgresql.translation.messages`,
+   `org.opengauss.translation.messages` from third-party dependencies. By default, L10N resources are loaded according to the system's default locale,
+   and localized information for a specific locale is displayed.
+   It is tedious to exhaustively enumerate `Resource Bundles` through the JSON definition of GraalVM Reachability Metadata.
+   This sometimes causes GraalVM Native Image to throw a warning log similar to the following at runtime.
+   The usual operation is to set the `buildArg` of `-H:+IncludeAllLocales`.
+
+```shell
+com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError: The program tried to access the resource at path
+
+   com/mysql/cj/LocalizedErrorMessages_zh_Hans_CN.properties
+
+without it being registered as reachable. Add it to the resource metadata to solve this problem. See https://www.graalvm.org/latest/reference-manual/native-image/metadata/#resources-and-resource-bundles for help
+  java.base@24.0.2/java.util.ResourceBundle.getBundle(ResourceBundle.java:1261)
+  com.mysql.cj.Messages.<clinit>(Messages.java:56)
+  com.mysql.cj.Constants.<clinit>(Constants.java:50)
+  com.mysql.cj.util.Util.<clinit>(Util.java:69)
+  com.mysql.cj.conf.ConnectionUrl$Type.getImplementingInstance(ConnectionUrl.java:251)
+  com.mysql.cj.conf.ConnectionUrl$Type.getConnectionUrlInstance(ConnectionUrl.java:221)
+  com.mysql.cj.conf.ConnectionUrl.getConnectionUrlInstance(ConnectionUrl.java:291)
+  com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:186)
+```
+
+9. Due to the use of `janino-compiler/janino` by `apache/calcite`, 
+    ShardingSphere's `SQL Federation` feature is unavailable in the GraalVM Native Image.
+    This also prevents ShardingSphere Proxy Native from integrating with OpenGauss.
+
+10. Due to the issue at https://github.com/oracle/graal/issues/11280, 
+    Etcd's Cluster mode integration cannot be used on GraalVM Native Images compiled via Windows 11,
+    and Etcd's Cluster mode will conflict with the GraalVM Tracing Agent.
+    If developers need to use Etcd's Cluster mode on GraalVM Native Images compiled via Linux,
+    they need to provide additional GraalVM Reachability Metadata related JSON themselves.

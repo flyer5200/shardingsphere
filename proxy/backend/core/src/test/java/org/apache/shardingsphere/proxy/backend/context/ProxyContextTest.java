@@ -17,100 +17,40 @@
 
 package org.apache.shardingsphere.proxy.backend.context;
 
-import org.apache.shardingsphere.infra.config.props.ConfigurationProperties;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
-import org.apache.shardingsphere.infra.instance.ComputeNodeInstanceContext;
-import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
-import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
-import org.apache.shardingsphere.infra.metadata.database.resource.ResourceMetaData;
-import org.apache.shardingsphere.infra.metadata.database.rule.RuleMetaData;
-import org.apache.shardingsphere.infra.metadata.statistics.ShardingSphereStatistics;
-import org.apache.shardingsphere.infra.metadata.statistics.builder.ShardingSphereStatisticsFactory;
-import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
 import org.apache.shardingsphere.mode.manager.ContextManager;
-import org.apache.shardingsphere.mode.metadata.MetaDataContexts;
-import org.apache.shardingsphere.mode.spi.repository.PersistRepository;
-import org.apache.shardingsphere.mode.state.ShardingSphereState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.configuration.plugins.Plugins;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.lang.reflect.Field;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ProxyContextTest {
     
-    private static final String SCHEMA_PATTERN = "db_%s";
-    
-    private final DatabaseType databaseType = TypedSPILoader.getService(DatabaseType.class, "FIXTURE");
-    
-    private ContextManager currentContextManager;
+    private ContextManager originalContextManager;
     
     @BeforeEach
-    void recordCurrentContextManager() {
-        currentContextManager = ProxyContext.getInstance().getContextManager();
+    void setUp() throws ReflectiveOperationException {
+        Field contextManagerField = ProxyContext.class.getDeclaredField("contextManager");
+        originalContextManager = (ContextManager) Plugins.getMemberAccessor().get(contextManagerField, ProxyContext.getInstance());
+        Plugins.getMemberAccessor().set(contextManagerField, ProxyContext.getInstance(), null);
     }
     
     @AfterEach
-    void restorePreviousContextManager() {
-        ProxyContext.init(currentContextManager);
+    void cleanUp() throws ReflectiveOperationException {
+        Field contextManagerField = ProxyContext.class.getDeclaredField("contextManager");
+        Plugins.getMemberAccessor().set(contextManagerField, ProxyContext.getInstance(), originalContextManager);
     }
     
     @Test
     void assertInit() {
-        ShardingSphereMetaData metaData = new ShardingSphereMetaData();
-        MetaDataContexts metaDataContexts = new MetaDataContexts(metaData, new ShardingSphereStatistics());
-        ProxyContext.init(new ContextManager(metaDataContexts, mock(ComputeNodeInstanceContext.class, RETURNS_DEEP_STUBS), mock(), mock(PersistRepository.class)));
-        assertThat(ProxyContext.getInstance().getContextManager().getStateContext(), is(ProxyContext.getInstance().getContextManager().getStateContext()));
-        assertThat(ProxyContext.getInstance().getContextManager().getStateContext().getState(), is(ShardingSphereState.OK));
-        assertThat(ProxyContext.getInstance().getContextManager().getMetaDataContexts(), is(ProxyContext.getInstance().getContextManager().getMetaDataContexts()));
-        assertTrue(ProxyContext.getInstance().getInstanceStateContext().isPresent());
-        assertThat(ProxyContext.getInstance().getInstanceStateContext(), is(ProxyContext.getInstance().getInstanceStateContext()));
-    }
-    
-    @Test
-    void assertDatabaseExists() {
-        ContextManager contextManager = mock(ContextManager.class, RETURNS_DEEP_STUBS);
-        ShardingSphereMetaData metaData = new ShardingSphereMetaData(
-                Collections.singleton(mockDatabase()), mock(ResourceMetaData.class), mock(RuleMetaData.class), new ConfigurationProperties(new Properties()));
-        MetaDataContexts metaDataContexts = new MetaDataContexts(metaData, ShardingSphereStatisticsFactory.create(metaData, new ShardingSphereStatistics()));
-        when(contextManager.getMetaDataContexts()).thenReturn(metaDataContexts);
-        ProxyContext.init(contextManager);
-        assertTrue(ProxyContext.getInstance().databaseExists("db"));
-        assertFalse(ProxyContext.getInstance().databaseExists("db_1"));
-    }
-    
-    @Test
-    void assertGetAllDatabaseNames() {
-        Collection<ShardingSphereDatabase> databases = createDatabases();
-        ContextManager contextManager = mock(ContextManager.class, RETURNS_DEEP_STUBS);
-        ShardingSphereMetaData metaData = new ShardingSphereMetaData(databases, mock(), mock(), new ConfigurationProperties(new Properties()));
-        MetaDataContexts metaDataContexts = new MetaDataContexts(metaData, ShardingSphereStatisticsFactory.create(metaData, new ShardingSphereStatistics()));
-        when(contextManager.getMetaDataContexts()).thenReturn(metaDataContexts);
-        ProxyContext.init(contextManager);
-        assertThat(new HashSet<>(ProxyContext.getInstance().getAllDatabaseNames()), is(databases.stream().map(ShardingSphereDatabase::getName).collect(Collectors.toSet())));
-    }
-    
-    private Collection<ShardingSphereDatabase> createDatabases() {
-        return IntStream.range(0, 10).mapToObj(i -> new ShardingSphereDatabase(String.format(SCHEMA_PATTERN, i), databaseType, mock(), mock(), Collections.emptyList())).collect(Collectors.toList());
-    }
-    
-    private ShardingSphereDatabase mockDatabase() {
-        ShardingSphereDatabase result = mock(ShardingSphereDatabase.class, RETURNS_DEEP_STUBS);
-        when(result.getName()).thenReturn("db");
-        when(result.getProtocolType()).thenReturn(databaseType);
-        return result;
+        ProxyContext actualProxyContext = ProxyContext.getInstance();
+        ContextManager expectedContextManager = mock(ContextManager.class);
+        ProxyContext.init(expectedContextManager);
+        assertThat(actualProxyContext.getContextManager(), is(expectedContextManager));
     }
 }

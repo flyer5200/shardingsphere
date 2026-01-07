@@ -23,7 +23,7 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.AlterIndexStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.index.AlterIndexStatement;
 
 /**
  * Alter index statement binder.
@@ -40,7 +40,7 @@ public final class AlterIndexStatementBinder implements SQLStatementBinder<Alter
     }
     
     private AlterIndexStatement copy(final AlterIndexStatement sqlStatement, final SimpleTableSegment boundTable) {
-        AlterIndexStatement result = new AlterIndexStatement();
+        AlterIndexStatement result = new AlterIndexStatement(sqlStatement.getDatabaseType());
         sqlStatement.getIndex().ifPresent(result::setIndex);
         sqlStatement.getRenameIndex().ifPresent(result::setRenameIndex);
         result.setSimpleTable(boundTable);

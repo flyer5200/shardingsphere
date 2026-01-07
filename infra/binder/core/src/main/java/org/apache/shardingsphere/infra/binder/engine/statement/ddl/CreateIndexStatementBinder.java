@@ -29,7 +29,7 @@ import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinde
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementCopyUtils;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateIndexStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.index.CreateIndexStatement;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -49,11 +49,11 @@ public final class CreateIndexStatementBinder implements SQLStatementBinder<Crea
     }
     
     private CreateIndexStatement copy(final CreateIndexStatement sqlStatement, final SimpleTableSegment boundTable, final Collection<ColumnSegment> boundColumns) {
-        CreateIndexStatement result = new CreateIndexStatement();
+        CreateIndexStatement result = new CreateIndexStatement(sqlStatement.getDatabaseType());
         result.setTable(boundTable);
         result.getColumns().addAll(boundColumns);
         result.setIndex(sqlStatement.getIndex());
-        sqlStatement.getGeneratedIndexStartIndex().ifPresent(result::setGeneratedIndexStartIndex);
+        sqlStatement.getAnonymousIndexStartIndex().ifPresent(result::setAnonymousIndexStartIndex);
         result.setIfNotExists(sqlStatement.isIfNotExists());
         sqlStatement.getAlgorithmType().ifPresent(result::setAlgorithmType);
         sqlStatement.getLockTable().ifPresent(result::setLockTable);

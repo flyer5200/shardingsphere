@@ -18,6 +18,10 @@
 package org.apache.shardingsphere.sharding.route.engine.condition.engine;
 
 import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
+import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
+import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereColumn;
+import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereSchema;
+import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereTable;
 import org.apache.shardingsphere.sharding.route.engine.condition.ShardingCondition;
 import org.apache.shardingsphere.sharding.route.engine.condition.value.ListShardingConditionValue;
 import org.apache.shardingsphere.sharding.route.engine.condition.value.RangeShardingConditionValue;
@@ -41,9 +45,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,10 +66,24 @@ class WhereClauseShardingConditionEngineTest {
     @Mock
     private WhereSegment whereSegment;
     
+    @Mock
+    private ShardingSphereDatabase database;
+    
+    @Mock
+    private ShardingSphereSchema schema;
+    
+    @Mock
+    private ShardingSphereTable table;
+    
     @BeforeEach
     void setUp() {
-        shardingConditionEngine = new WhereClauseShardingConditionEngine(rule, mock(TimestampServiceRule.class));
+        shardingConditionEngine = new WhereClauseShardingConditionEngine(database, rule, mock(TimestampServiceRule.class));
         when(sqlStatementContext.getWhereSegments()).thenReturn(Collections.singleton(whereSegment));
+        when(database.containsSchema("")).thenReturn(true);
+        when(database.getSchema("")).thenReturn(schema);
+        when(schema.containsTable("")).thenReturn(true);
+        when(schema.getTable("")).thenReturn(table);
+        when(table.getColumn("foo_sharding_col")).thenReturn(mock(ShardingSphereColumn.class));
     }
     
     @Test
@@ -80,7 +98,7 @@ class WhereClauseShardingConditionEngineTest {
         when(rule.findShardingColumn(any(), any())).thenReturn(Optional.of("foo_sharding_col"));
         List<ShardingCondition> actual = shardingConditionEngine.createShardingConditions(sqlStatementContext, Collections.emptyList());
         assertThat(actual.get(0).getStartIndex(), is(0));
-        assertThat(actual.get(0).getValues().get(0), instanceOf(RangeShardingConditionValue.class));
+        assertThat(actual.get(0).getValues().get(0), isA(RangeShardingConditionValue.class));
     }
     
     @Test
@@ -94,6 +112,6 @@ class WhereClauseShardingConditionEngineTest {
         when(rule.findShardingColumn(any(), any())).thenReturn(Optional.of("foo_sharding_col"));
         List<ShardingCondition> actual = shardingConditionEngine.createShardingConditions(sqlStatementContext, Collections.emptyList());
         assertThat(actual.get(0).getStartIndex(), is(0));
-        assertThat(actual.get(0).getValues().get(0), instanceOf(ListShardingConditionValue.class));
+        assertThat(actual.get(0).getValues().get(0), isA(ListShardingConditionValue.class));
     }
 }

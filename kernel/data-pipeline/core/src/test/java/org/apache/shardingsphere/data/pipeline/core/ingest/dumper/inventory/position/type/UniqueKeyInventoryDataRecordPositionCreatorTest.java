@@ -18,15 +18,14 @@
 package org.apache.shardingsphere.data.pipeline.core.ingest.dumper.inventory.position.type;
 
 import org.apache.shardingsphere.data.pipeline.core.ingest.dumper.inventory.InventoryDumperContext;
-import org.apache.shardingsphere.data.pipeline.core.ingest.position.type.pk.PrimaryKeyIngestPosition;
-import org.apache.shardingsphere.data.pipeline.core.ingest.position.type.pk.type.UnsupportedKeyIngestPosition;
+import org.apache.shardingsphere.data.pipeline.core.ingest.position.type.pk.UniqueKeyIngestPosition;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,14 +34,13 @@ class UniqueKeyInventoryDataRecordPositionCreatorTest {
     
     @Test
     void assertCreate() throws SQLException {
-        assertThat(new UniqueKeyInventoryDataRecordPositionCreator().create(mockInventoryDumperContext(), mock(ResultSet.class)), instanceOf(UnsupportedKeyIngestPosition.class));
+        assertThat(new UniqueKeyInventoryDataRecordPositionCreator().create(mockInventoryDumperContext(), mock(ResultSet.class)), isA(UniqueKeyIngestPosition.class));
     }
     
-    @SuppressWarnings("unchecked")
     private InventoryDumperContext mockInventoryDumperContext() {
         InventoryDumperContext result = mock(InventoryDumperContext.class, RETURNS_DEEP_STUBS);
-        PrimaryKeyIngestPosition<Object> ingestPosition = mock(PrimaryKeyIngestPosition.class);
-        when(ingestPosition.getEndValue()).thenReturn(new Object());
+        UniqueKeyIngestPosition<?> ingestPosition = mock(UniqueKeyIngestPosition.class);
+        when(ingestPosition.getUpperBound()).thenReturn(null);
         when(result.getCommonContext().getPosition()).thenReturn(ingestPosition);
         return result;
     }

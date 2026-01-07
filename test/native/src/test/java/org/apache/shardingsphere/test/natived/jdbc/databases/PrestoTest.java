@@ -19,11 +19,8 @@ package org.apache.shardingsphere.test.natived.jdbc.databases;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.shardingsphere.driver.jdbc.core.connection.ShardingSphereConnection;
-import org.apache.shardingsphere.infra.database.core.DefaultDatabase;
-import org.apache.shardingsphere.infra.metadata.database.resource.unit.StorageUnit;
-import org.apache.shardingsphere.mode.manager.ContextManager;
 import org.apache.shardingsphere.test.natived.commons.TestShardingService;
+import org.apache.shardingsphere.test.natived.commons.util.ResourceUtils;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +59,7 @@ class PrestoTest {
     private String baseJdbcUrl;
     
     @Container
-    private final GenericContainer<?> container = new GenericContainer<>("prestodb/presto:0.292")
+    private final GenericContainer<?> container = new GenericContainer<>("prestodb/presto:0.296")
             .withExposedPorts(8080)
             .withCopyFileToContainer(
                     MountableFile.forHostPath(Paths.get("src/test/resources/test-native/properties/presto-iceberg.properties").toAbsolutePath()),
@@ -80,13 +77,7 @@ class PrestoTest {
     
     @AfterEach
     void afterEach() throws SQLException {
-        try (Connection connection = logicDataSource.getConnection()) {
-            ContextManager contextManager = connection.unwrap(ShardingSphereConnection.class).getContextManager();
-            for (StorageUnit each : contextManager.getStorageUnits(DefaultDatabase.LOGIC_NAME).values()) {
-                each.getDataSource().unwrap(HikariDataSource.class).close();
-            }
-            contextManager.close();
-        }
+        ResourceUtils.closeJdbcDataSource(logicDataSource);
         System.clearProperty(systemPropKeyPrefix + "ds0.jdbc-url");
         System.clearProperty(systemPropKeyPrefix + "ds1.jdbc-url");
         System.clearProperty(systemPropKeyPrefix + "ds2.jdbc-url");
@@ -97,7 +88,7 @@ class PrestoTest {
         baseJdbcUrl = "jdbc:presto://localhost:" + container.getMappedPort(8080) + "/iceberg";
         logicDataSource = createDataSource();
         TestShardingService testShardingService = new TestShardingService(logicDataSource);
-        testShardingService.processSuccessInPresto();
+        testShardingService.processSuccessWithoutTransactions();
         testShardingService.cleanEnvironment();
     }
     
@@ -124,7 +115,7 @@ class PrestoTest {
     }
     
     /**
-     * TODO `shardingsphere-parser-sql-presto` module does not support `create table` and `truncate table` statements yet.
+     * TODO `shardingsphere-parser-sql-engine-presto` module does not support `create table` and `truncate table` statements yet.
      * Presto Iceberg Connector does not support AUTO_INCREMENT columns.
      * Presto Iceberg Connector does not support Primary Key constraints.
      *
@@ -135,27 +126,12 @@ class PrestoTest {
         try (
                 Connection con = DriverManager.getConnection(baseJdbcUrl + "/" + schemaName, "test", null);
                 Statement stmt = con.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS t_order (\n"
-                    + "    order_id BIGINT NOT NULL,\n"
-                    + "    order_type INTEGER,\n"
-                    + "    user_id INTEGER NOT NULL,\n"
-                    + "    address_id BIGINT NOT NULL,\n"
-                    + "    status VARCHAR(50)\n"
-                    + ")");
-            stmt.execute("CREATE TABLE IF NOT EXISTS t_order_item (\n"
-                    + "    order_item_id BIGINT NOT NULL,\n"
-                    + "    order_id BIGINT NOT NULL,\n"
-                    + "    user_id INT NOT NULL,\n"
-                    + "    phone VARCHAR(50),\n"
-                    + "    status VARCHAR(50)\n"
-                    + ")");
-            stmt.execute("CREATE TABLE IF NOT EXISTS t_address (\n"
-                    + "    address_id BIGINT NOT NULL,\n"
-                    + "    address_name VARCHAR(100) NOT NULL\n"
-                    + ")");
-            stmt.execute("truncate table t_order");
-            stmt.execute("truncate table t_order_item");
-            stmt.execute("truncate table t_address");
+            stmt.execute("CREATE TABLE IF NOT EXISTS t_order (order_id BIGINT NOT NULL,order_type INTEGER,user_id INTEGER NOT NULL,address_id BIGINT NOT NULL,status VARCHAR(50))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS t_order_item (order_item_id BIGINT NOT NULL,order_id BIGINT NOT NULL,user_id INT NOT NULL,phone VARCHAR(50),status VARCHAR(50))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS t_address (address_id BIGINT NOT NULL,address_name VARCHAR(100) NOT NULL)");
+            stmt.execute("TRUNCATE TABLE t_order");
+            stmt.execute("TRUNCATE TABLE t_order_item");
+            stmt.execute("TRUNCATE TABLE t_address");
         } catch (final SQLException ex) {
             throw new RuntimeException(ex);
         }

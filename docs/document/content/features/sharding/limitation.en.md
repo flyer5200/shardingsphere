@@ -174,3 +174,12 @@ When a query contains multiple aggregate functions at the same time, it does not
 ### LOAD DATA / LOAD XML
 
 Not support MySQL `LOAD DATA` and `LOAD XML` statements to load data to sharding table.
+
+### Semicolons separate multiple statements
+
+Not support simultaneous execution of multiple SQL statements separated by `;`.
+
+### Shard key value extraction
+
+Shard key extraction only supports literals or bound parameters that can be parsed directly; 
+Values requiring type annotations, expression evaluation, or function calculation are not used for sharding and may result in full routing or routing validation failures.

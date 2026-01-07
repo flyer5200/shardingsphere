@@ -37,7 +37,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.Colu
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SimpleTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.InsertStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.InsertStatement;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -67,13 +67,15 @@ public final class InsertStatementBinder implements SQLStatementBinder<InsertSta
     
     private InsertStatement copy(final InsertStatement sqlStatement, final WithSegment boundWith, final SimpleTableSegment boundTable,
                                  final InsertColumnsSegment boundInsertColumns, final SetAssignmentSegment boundSetAssignment, final SubquerySegment boundInsertSelect) {
-        InsertStatement result = new InsertStatement();
+        InsertStatement result = new InsertStatement(sqlStatement.getDatabaseType());
         result.setWith(boundWith);
         result.setTable(boundTable);
         result.setInsertColumns(boundInsertColumns);
         result.setSetAssignment(boundSetAssignment);
         result.setInsertSelect(boundInsertSelect);
         result.getValues().addAll(sqlStatement.getValues());
+        result.setIgnore(sqlStatement.isIgnore());
+        result.setReplace(sqlStatement.isReplace());
         sqlStatement.getOnDuplicateKeyColumns().ifPresent(result::setOnDuplicateKeyColumns);
         sqlStatement.getOutput().ifPresent(result::setOutput);
         sqlStatement.getMultiTableInsertType().ifPresent(result::setMultiTableInsertType);

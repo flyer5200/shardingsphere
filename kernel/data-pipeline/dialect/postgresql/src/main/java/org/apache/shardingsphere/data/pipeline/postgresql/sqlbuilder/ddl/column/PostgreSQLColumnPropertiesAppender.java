@@ -50,6 +50,10 @@ public final class PostgreSQLColumnPropertiesAppender {
     
     private static final Pattern BRACKETS_PATTERN = Pattern.compile("(\\(\\d+\\))");
     
+    private static final Pattern SIGNED_NUMBER_WITH_GROUPING_PATTERN = Pattern.compile("^([+-])?\\s*[0-9][0-9,\\s]*$");
+    
+    private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
+    
     private static final String ATT_OPTION_SPLIT = "=";
     
     private final PostgreSQLDDLTemplateExecutor templateExecutor;
@@ -117,14 +121,9 @@ public final class PostgreSQLColumnPropertiesAppender {
         return result;
     }
     
-    @SuppressWarnings("unchecked")
     private String getInheritedFromTableOrType(final Map<String, Object> context) {
         String result = "inheritedfrom";
-        if (null != context.get("typoid")) {
-            result += "type";
-        } else if (null != context.get("coll_inherits") && !((Collection<String>) context.get("coll_inherits")).isEmpty()) {
-            result += "table";
-        }
+        result += null == context.get("typoid") ? "table" : "type";
         return result;
     }
     
@@ -143,6 +142,7 @@ public final class PostgreSQLColumnPropertiesAppender {
     }
     
     private void columnFormatter(final Map<String, Object> column, final Collection<String> editTypes) throws SQLException {
+        normalizeSequenceValues(column);
         handlePrimaryColumn(column);
         fetchLengthPrecision(column);
         formatColumnVariables(column);
@@ -150,6 +150,42 @@ public final class PostgreSQLColumnPropertiesAppender {
         editTypes.add(column.get("cltype").toString());
         column.put("edit_types", editTypes.stream().sorted().collect(Collectors.toList()));
         column.put("cltype", parseTypeName(column.get("cltype").toString()));
+    }
+    
+    private void normalizeSequenceValues(final Map<String, Object> column) {
+        normalizeSequenceValue(column, "seqincrement");
+        normalizeSequenceValue(column, "seqstart");
+        normalizeSequenceValue(column, "seqmin");
+        normalizeSequenceValue(column, "seqmax");
+        normalizeSequenceValue(column, "seqcache");
+    }
+    
+    private void normalizeSequenceValue(final Map<String, Object> column, final String key) {
+        if (!column.containsKey(key)) {
+            return;
+        }
+        Object value = column.get(key);
+        if (null == value || value instanceof Number) {
+            return;
+        }
+        String rawValue = value.toString().trim();
+        Matcher matcher = SIGNED_NUMBER_WITH_GROUPING_PATTERN.matcher(rawValue);
+        if (!matcher.matches()) {
+            column.remove(key);
+            return;
+        }
+        String digits = NON_DIGIT_PATTERN.matcher(rawValue).replaceAll("");
+        if (digits.isEmpty()) {
+            column.remove(key);
+            return;
+        }
+        String sign = null == matcher.group(1) ? "" : matcher.group(1);
+        String sanitized = sign + digits;
+        try {
+            column.put(key, Long.parseLong(sanitized));
+        } catch (final NumberFormatException ignored) {
+            column.remove(key);
+        }
     }
     
     private void handlePrimaryColumn(final Map<String, Object> column) {
@@ -308,16 +344,13 @@ public final class PostgreSQLColumnPropertiesAppender {
         if (idx > 0 && result.endsWith(")")) {
             result = result.substring(0, idx);
         } else if (idx > 0 && result.startsWith("time")) {
-            int endIdx = result.indexOf(')');
-            if (1 != endIdx) {
-                Matcher matcher = BRACKETS_PATTERN.matcher(result);
-                StringBuffer buffer = new StringBuffer();
-                while (matcher.find()) {
-                    matcher.appendReplacement(buffer, "");
-                }
-                matcher.appendTail(buffer);
-                result = buffer.toString();
+            Matcher matcher = BRACKETS_PATTERN.matcher(result);
+            StringBuffer buffer = new StringBuffer();
+            while (matcher.find()) {
+                matcher.appendReplacement(buffer, "");
             }
+            matcher.appendTail(buffer);
+            result = buffer.toString();
         } else if (result.startsWith("interval")) {
             result = "interval";
         }

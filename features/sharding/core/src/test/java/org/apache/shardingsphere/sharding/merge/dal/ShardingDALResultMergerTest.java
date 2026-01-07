@@ -17,23 +17,13 @@
 
 package org.apache.shardingsphere.sharding.merge.dal;
 
+import org.apache.shardingsphere.database.connector.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.executor.sql.execute.result.query.QueryResult;
-import org.apache.shardingsphere.infra.merge.result.impl.local.LocalDataMergedResult;
 import org.apache.shardingsphere.infra.merge.result.impl.transparent.TransparentMergedResult;
 import org.apache.shardingsphere.infra.spi.type.typed.TypedSPILoader;
-import org.apache.shardingsphere.sharding.merge.dal.show.LogicTablesMergedResult;
-import org.apache.shardingsphere.sharding.merge.dal.show.ShowCreateTableMergedResult;
-import org.apache.shardingsphere.sharding.merge.dal.show.ShowIndexMergedResult;
-import org.apache.shardingsphere.sharding.merge.dal.show.ShowTableStatusMergedResult;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.DALStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ExplainStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowCreateTableStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowDatabasesStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowIndexStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowTableStatusStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dal.ShowTablesStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dal.DALStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dal.ExplainStatement;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,8 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isA;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -59,54 +49,24 @@ class ShardingDALResultMergerTest {
     private final List<QueryResult> queryResults = Collections.singletonList(mock());
     
     @Test
-    void assertMergeForShowDatabasesStatement() throws SQLException {
-        SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ShowDatabasesStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(LocalDataMergedResult.class));
-    }
-    
-    @Test
-    void assertMergeForShowShowTablesStatement() throws SQLException {
-        SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ShowTablesStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(LogicTablesMergedResult.class));
-    }
-    
-    @Test
-    void assertMergeForShowTableStatusStatement() throws SQLException {
-        SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ShowTableStatusStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(ShowTableStatusMergedResult.class));
-    }
-    
-    @Test
-    void assertMergeForShowIndexStatement() throws SQLException {
-        SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ShowIndexStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(ShowIndexMergedResult.class));
-    }
-    
-    @Test
-    void assertMergeForShowCreateTableStatement() throws SQLException {
-        SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ShowCreateTableStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(ShowCreateTableMergedResult.class));
-    }
-    
-    @Test
     void assertMergeForExplainStatement() throws SQLException {
         SQLStatementContext sqlStatementContext = mockSQLStatementContext(mock(ExplainStatement.class));
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(TransparentMergedResult.class));
+        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), isA(TransparentMergedResult.class));
     }
     
     @Test
     void assertMergeWithNotTableAvailable() throws SQLException {
         SQLStatementContext sqlStatementContext = mock(SQLStatementContext.class, RETURNS_DEEP_STUBS);
         when(sqlStatementContext.getTablesContext().getDatabaseNames()).thenReturn(Collections.emptyList());
-        when(sqlStatementContext.getDatabaseType()).thenReturn(databaseType);
-        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), instanceOf(TransparentMergedResult.class));
+        when(sqlStatementContext.getSqlStatement().getDatabaseType()).thenReturn(databaseType);
+        assertThat(resultMerger.merge(queryResults, sqlStatementContext, mock(), mock()), isA(TransparentMergedResult.class));
     }
     
     private SQLStatementContext mockSQLStatementContext(final DALStatement dalStatement) {
         SQLStatementContext result = mock(SQLStatementContext.class, RETURNS_DEEP_STUBS);
         when(result.getSqlStatement()).thenReturn(dalStatement);
         when(result.getTablesContext().getSchemaName()).thenReturn(Optional.empty());
-        when(result.getDatabaseType()).thenReturn(databaseType);
+        when(result.getSqlStatement().getDatabaseType()).thenReturn(databaseType);
         return result;
     }
 }

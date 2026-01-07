@@ -18,22 +18,20 @@
 package org.apache.shardingsphere.infra.binder.context.statement.type.ddl;
 
 import lombok.Getter;
+import org.apache.shardingsphere.infra.binder.context.available.WhereContextAvailable;
 import org.apache.shardingsphere.infra.binder.context.segment.table.TablesContext;
 import org.apache.shardingsphere.infra.binder.context.statement.SQLStatementContext;
 import org.apache.shardingsphere.infra.binder.context.statement.type.dml.SelectStatementContext;
-import org.apache.shardingsphere.infra.binder.context.available.WhereContextAvailable;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseType;
 import org.apache.shardingsphere.infra.metadata.ShardingSphereMetaData;
 import org.apache.shardingsphere.sql.parser.statement.core.enums.SubqueryType;
 import org.apache.shardingsphere.sql.parser.statement.core.extractor.TableExtractor;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.ColumnSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.BinaryOperationExpression;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateViewStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.view.CreateViewStatement;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Create view statement context.
@@ -41,22 +39,18 @@ import java.util.List;
 @Getter
 public final class CreateViewStatementContext implements SQLStatementContext, WhereContextAvailable {
     
-    private final DatabaseType databaseType;
-    
     private final CreateViewStatement sqlStatement;
     
     private final TablesContext tablesContext;
     
     private final SelectStatementContext selectStatementContext;
     
-    public CreateViewStatementContext(final ShardingSphereMetaData metaData, final DatabaseType databaseType, final List<Object> params,
-                                      final CreateViewStatement sqlStatement, final String currentDatabaseName) {
-        this.databaseType = databaseType;
+    public CreateViewStatementContext(final ShardingSphereMetaData metaData, final CreateViewStatement sqlStatement, final String currentDatabaseName) {
         this.sqlStatement = sqlStatement;
         TableExtractor extractor = new TableExtractor();
         extractor.extractTablesFromCreateViewStatement(sqlStatement);
         tablesContext = new TablesContext(extractor.getRewriteTables());
-        selectStatementContext = new SelectStatementContext(databaseType, sqlStatement.getSelect(), params, metaData, currentDatabaseName, Collections.emptyList());
+        selectStatementContext = new SelectStatementContext(sqlStatement.getSelect(), metaData, currentDatabaseName, Collections.emptyList());
         selectStatementContext.setSubqueryType(SubqueryType.VIEW_DEFINITION);
     }
     

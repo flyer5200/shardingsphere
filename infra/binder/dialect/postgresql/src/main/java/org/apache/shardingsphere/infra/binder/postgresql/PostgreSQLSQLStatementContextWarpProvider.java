@@ -19,7 +19,7 @@ package org.apache.shardingsphere.infra.binder.postgresql;
 
 import org.apache.shardingsphere.infra.binder.context.DialectCommonSQLStatementContextWarpProvider;
 import org.apache.shardingsphere.sql.parser.statement.core.statement.SQLStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.CopyStatement;
+import org.apache.shardingsphere.sql.parser.statement.postgresql.dml.PostgreSQLCopyStatement;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.Collections;
  */
 public final class PostgreSQLSQLStatementContextWarpProvider implements DialectCommonSQLStatementContextWarpProvider {
     
-    private static final Collection<Class<? extends SQLStatement>> NEED_TO_WARP_SQL_STATEMENT_TYPES = Collections.singleton(CopyStatement.class);
+    private static final Collection<Class<? extends SQLStatement>> NEED_TO_WARP_SQL_STATEMENT_TYPES = Collections.singleton(PostgreSQLCopyStatement.class);
     
     @Override
     public Collection<Class<? extends SQLStatement>> getNeedToWarpSQLStatementTypes() {

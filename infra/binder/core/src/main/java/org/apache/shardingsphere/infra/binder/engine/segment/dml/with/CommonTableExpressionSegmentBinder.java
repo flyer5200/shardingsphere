@@ -18,7 +18,6 @@
 package org.apache.shardingsphere.infra.binder.engine.segment.dml.with;
 
 import com.cedarsoftware.util.CaseInsensitiveMap.CaseInsensitiveString;
-import com.google.common.base.Strings;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import lombok.AccessLevel;
@@ -30,7 +29,7 @@ import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.context.ty
 import org.apache.shardingsphere.infra.binder.engine.segment.dml.from.type.SubqueryTableSegmentBinder;
 import org.apache.shardingsphere.infra.binder.engine.segment.util.SubqueryTableBindUtils;
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
-import org.apache.shardingsphere.infra.exception.core.ShardingSpherePreconditions;
+import org.apache.shardingsphere.infra.exception.ShardingSpherePreconditions;
 import org.apache.shardingsphere.infra.exception.kernel.syntax.DifferenceInColumnCountOfSelectListAndColumnNameListException;
 import org.apache.shardingsphere.infra.exception.kernel.syntax.DuplicateCommonTableExpressionAliasException;
 import org.apache.shardingsphere.sql.parser.statement.core.enums.TableSourceType;
@@ -38,17 +37,14 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.column.Co
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.expr.complex.CommonTableExpressionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ColumnProjectionSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.item.ProjectionSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound.ColumnSegmentBoundInfo;
-import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.bound.TableSegmentBoundInfo;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.SubqueryTableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -78,7 +74,7 @@ public final class CommonTableExpressionSegmentBinder {
                     new SimpleTableSegmentBinderContext(segment.getColumns().stream().map(ColumnProjectionSegment::new).collect(Collectors.toList()), TableSourceType.TEMPORARY_TABLE));
         }
         SubqueryTableSegment subqueryTableSegment = new SubqueryTableSegment(segment.getStartIndex(), segment.getStopIndex(), segment.getSubquery());
-        subqueryTableSegment.setAlias(segment.getAliasSegment());
+        segment.getAliasSegment().ifPresent(subqueryTableSegment::setAlias);
         SubqueryTableSegment boundSubquerySegment =
                 SubqueryTableSegmentBinder.bind(subqueryTableSegment, binderContext, LinkedHashMultimap.create(), binderContext.getExternalTableBinderContexts(), true);
         CommonTableExpressionSegment result = new CommonTableExpressionSegment(
@@ -94,7 +90,7 @@ public final class CommonTableExpressionSegmentBinder {
     private static Multimap<CaseInsensitiveString, TableSegmentBinderContext> createCurrentTableBinderContexts(final Collection<ColumnSegment> definitionColumns,
                                                                                                                final SQLStatementBinderContext binderContext, final SelectStatement selectStatement) {
         Collection<ProjectionSegment> subqueryProjections = SubqueryTableBindUtils.createSubqueryProjections(
-                selectStatement.getProjections().getProjections(), new IdentifierValue(""), binderContext.getDatabaseType(), TableSourceType.TEMPORARY_TABLE);
+                selectStatement.getProjections().getProjections(), new IdentifierValue(""), binderContext.getSqlStatement().getDatabaseType(), TableSourceType.TEMPORARY_TABLE);
         Multimap<CaseInsensitiveString, TableSegmentBinderContext> result = LinkedHashMultimap.create();
         Collection<ProjectionSegment> boundDefinitionColumns = createBoundDefinitionColumns(definitionColumns, subqueryProjections);
         Collection<ProjectionSegment> boundProjectionSegments = definitionColumns.isEmpty() ? subqueryProjections : new LinkedList<>(boundDefinitionColumns);
@@ -120,7 +116,8 @@ public final class CommonTableExpressionSegmentBinder {
             ColumnSegment boundColumnSegment = copy(each);
             ProjectionSegment projectionSegment = projectionSegments.get(index);
             if (projectionSegment instanceof ColumnProjectionSegment) {
-                boundColumnSegment.setColumnBoundInfo(createColumnSegmentBoundInfo(each, ((ColumnProjectionSegment) projectionSegment).getColumn()));
+                boundColumnSegment.setColumnBoundInfo(
+                        ColumnSegmentBinder.createColumnSegmentBoundInfo(each, ((ColumnProjectionSegment) projectionSegment).getColumn(), TableSourceType.TEMPORARY_TABLE));
             }
             result.add(boundColumnSegment);
             index++;
@@ -136,18 +133,6 @@ public final class CommonTableExpressionSegmentBinder {
         segment.getLeftParentheses().ifPresent(result::setLeftParentheses);
         segment.getRightParentheses().ifPresent(result::setRightParentheses);
         return result;
-    }
-    
-    private static ColumnSegmentBoundInfo createColumnSegmentBoundInfo(final ColumnSegment segment, final ColumnSegment inputColumnSegment) {
-        IdentifierValue originalDatabase = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalDatabase();
-        IdentifierValue originalSchema = null == inputColumnSegment ? null : inputColumnSegment.getColumnBoundInfo().getOriginalSchema();
-        IdentifierValue segmentOriginalTable = segment.getColumnBoundInfo().getOriginalTable();
-        IdentifierValue originalTable = Strings.isNullOrEmpty(segmentOriginalTable.getValue())
-                ? Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalTable()).orElse(segmentOriginalTable)
-                : segmentOriginalTable;
-        IdentifierValue segmentOriginalColumn = segment.getColumnBoundInfo().getOriginalColumn();
-        IdentifierValue originalColumn = Optional.ofNullable(inputColumnSegment).map(optional -> optional.getColumnBoundInfo().getOriginalColumn()).orElse(segmentOriginalColumn);
-        return new ColumnSegmentBoundInfo(new TableSegmentBoundInfo(originalDatabase, originalSchema), originalTable, originalColumn, TableSourceType.TEMPORARY_TABLE);
     }
     
     private static void putExternalTableBinderContext(final CommonTableExpressionSegment segment, final Multimap<CaseInsensitiveString, TableSegmentBinderContext> externalTableBinderContexts,

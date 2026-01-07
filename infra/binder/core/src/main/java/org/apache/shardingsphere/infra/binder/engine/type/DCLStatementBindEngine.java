@@ -18,9 +18,9 @@
 package org.apache.shardingsphere.infra.binder.engine.type;
 
 import org.apache.shardingsphere.infra.binder.engine.statement.SQLStatementBinderContext;
-import org.apache.shardingsphere.infra.binder.engine.statement.dcl.DenyUserStatementBinder;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.DCLStatement;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dcl.DenyUserStatement;
+import org.apache.shardingsphere.infra.binder.engine.statement.dcl.RevokeStatementBinder;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dcl.DCLStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dcl.RevokeStatement;
 
 /**
  * DCL statement bind engine.
@@ -35,8 +35,8 @@ public final class DCLStatementBindEngine {
      * @return bound DCL statement
      */
     public DCLStatement bind(final DCLStatement statement, final SQLStatementBinderContext binderContext) {
-        if (statement instanceof DenyUserStatement) {
-            return new DenyUserStatementBinder().bind((DenyUserStatement) statement, binderContext);
+        if (statement instanceof RevokeStatement) {
+            return new RevokeStatementBinder().bind((RevokeStatement) statement, binderContext);
         }
         return statement;
     }

@@ -11,7 +11,7 @@ ShardingSphere's support for HiveServer2 JDBC Driver is in the optional module.
 
 ## Prerequisites
 
-To use a `jdbcUrl` like `jdbc:hive2://localhost:10000/` for the data node in the ShardingSphere configuration file,
+To use a `standardJdbcUrl` like `jdbc:hive2://localhost:10000/` for the data node in the ShardingSphere configuration file,
 The possible Maven dependencies are as follows.
 
 ```xml
@@ -23,7 +23,7 @@ The possible Maven dependencies are as follows.
     </dependency>
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-parser-sql-hive</artifactId>
+        <artifactId>shardingsphere-jdbc-dialect-hive</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
     <dependency>
@@ -35,17 +35,6 @@ The possible Maven dependencies are as follows.
         <groupId>org.apache.hive</groupId>
         <artifactId>hive-service</artifactId>
         <version>4.0.1</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-mapreduce-client-core</artifactId>
-        <version>3.3.6</version>
-        <exclusions>
-            <exclusion>
-                <groupId>*</groupId>
-                <artifactId>*</artifactId>
-            </exclusion>
-        </exclusions>
     </dependency>
 </dependencies>
 ```
@@ -66,13 +55,13 @@ The following is an example of a possible configuration,
     </dependency>
     <dependency>
         <groupId>org.apache.shardingsphere</groupId>
-        <artifactId>shardingsphere-parser-sql-hive</artifactId>
+        <artifactId>shardingsphere-parser-sql-engine-hive</artifactId>
         <version>${shardingsphere.version}</version>
     </dependency>
     <dependency>
         <groupId>io.github.linghengqian</groupId>
         <artifactId>hive-server2-jdbc-driver-thin</artifactId>
-        <version>1.7.0</version>
+        <version>1.8.2</version>
         <exclusions>
             <exclusion>
                 <groupId>com.fasterxml.woodstox</groupId>
@@ -81,17 +70,6 @@ The following is an example of a possible configuration,
             <exclusion>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-            </exclusion>
-        </exclusions>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-mapreduce-client-core</artifactId>
-        <version>3.3.6</version>
-        <exclusions>
-            <exclusion>
-                <groupId>*</groupId>
-                <artifactId>*</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -125,7 +103,7 @@ sudo snap install dbeaver-ce
 snap run dbeaver-ce
 ```
 
-In DBeaver Community, use the `jdbcUrl` of `jdbc:hive2://localhost:10000/` to connect to HiveServer2, 
+In DBeaver Community, use the `standardJdbcUrl` of `jdbc:hive2://localhost:10000/` to connect to HiveServer2, 
 and leave `username` and `password` blank.
 Execute the following SQL,
 
@@ -134,24 +112,6 @@ Execute the following SQL,
 CREATE DATABASE demo_ds_0;
 CREATE DATABASE demo_ds_1;
 CREATE DATABASE demo_ds_2;
-```
-
-Use the `jdbcUrl` of `jdbc:hive2://localhost:10000/demo_ds_0`, 
-`jdbc:hive2://localhost:10000/demo_ds_1` and `jdbc:hive2://localhost:10000/demo_ds_2` to connect to HiveServer2 to execute the following SQL,
-
-```sql
--- noinspection SqlNoDataSourceInspectionForFile
-CREATE TABLE IF NOT EXISTS t_order
-(
-    order_id   BIGINT NOT NULL,
-    order_type INT,
-    user_id    INT    NOT NULL,
-    address_id BIGINT NOT NULL,
-    status     string,
-    PRIMARY KEY (order_id) disable novalidate
-) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2');
-
-TRUNCATE TABLE t_order;
 ```
 
 ### Create ShardingSphere data source in business projects
@@ -164,15 +124,15 @@ dataSources:
     ds_0:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0
+        standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0
     ds_1:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_1
+        standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_1
     ds_2:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_2
+        standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_2
 rules:
 - !SHARDING
     tables:
@@ -213,9 +173,12 @@ public class ExampleUtils {
         try (HikariDataSource dataSource = new HikariDataSource(config);
              Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS t_order (order_id BIGINT NOT NULL, order_type INT, user_id INT NOT NULL, address_id BIGINT NOT NULL, status string, PRIMARY KEY (order_id) disable novalidate) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2')");
+            statement.execute("TRUNCATE TABLE t_order");
             statement.execute("INSERT INTO t_order (user_id, order_type, address_id, status) VALUES (1, 1, 1, 'INSERT_TEST')");
             statement.executeQuery("SELECT * FROM t_order");
             statement.execute("DELETE FROM t_order WHERE user_id=1");
+            statement.execute("DROP TABLE IF EXISTS t_order");
         }
     }
 }
@@ -225,7 +188,7 @@ public class ExampleUtils {
 
 ### Connect to HiveServer2 with ZooKeeper Service Discovery enabled
 
-`jdbcUrl` in the ShardingSphere configuration file can be configured to connect to HiveServer2 with ZooKeeper Service Discovery enabled.
+`standardJdbcUrl` in the ShardingSphere configuration file can be configured to connect to HiveServer2 with ZooKeeper Service Discovery enabled.
 
 For discussion, assume that there is the following Docker Compose file to start HiveServer2 with ZooKeeper Service Discovery.
 
@@ -233,7 +196,7 @@ For discussion, assume that there is the following Docker Compose file to start 
 name: test-1
 services:
   zookeeper:
-    image: zookeeper:3.9.3-jre-17
+    image: zookeeper:3.9.4-jre-17
     ports:
       - "2181:2181"
   apache-hive-1:
@@ -252,7 +215,7 @@ services:
 ```
 
 In DBeaver Community,
-use `jdbcUrl` of `jdbc:hive2://127.0.0.1:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2` to connect to HiveServer2,
+use `standardJdbcUrl` of `jdbc:hive2://127.0.0.1:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2` to connect to HiveServer2,
 leave `username` and `password` blank.
 Execute the following SQL,
 
@@ -263,26 +226,6 @@ CREATE DATABASE demo_ds_1;
 CREATE DATABASE demo_ds_2;
 ```
 
-Use `jdbcUrl` of `jdbc:hive2://127.0.0.1:2181/demo_ds_0;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`,
-`jdbc:hive2://127.0.0.1:2181/demo_ds_1;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`
-and `jdbc:hive2://127.0.0.1:2181/demo_ds_2;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`
-to connect to HiveServer2 and execute the following SQL,
-
-```sql
--- noinspection SqlNoDataSourceInspectionForFile
-CREATE TABLE IF NOT EXISTS t_order
-(
-    order_id   BIGINT NOT NULL,
-    order_type INT,
-    user_id    INT    NOT NULL,
-    address_id BIGINT NOT NULL,
-    status     string,
-    PRIMARY KEY (order_id) disable novalidate
-) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2');
-
-TRUNCATE TABLE t_order;
-```
-
 After the business project introduces the dependencies involved in the `prerequisites`,
 write the ShardingSphere data source configuration file `demo.yaml` on the classpath of the business project.
 
@@ -291,15 +234,15 @@ dataSources:
     ds_0:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_0;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
+        standardJdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_0;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
     ds_1:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_1;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
+        standardJdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_1;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
     ds_2:
         dataSourceClassName: com.zaxxer.hikari.HikariDataSource
         driverClassName: org.apache.hive.jdbc.HiveDriver
-        jdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_2;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
+        standardJdbcUrl: jdbc:hive2://127.0.0.1:2181/demo_ds_2;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2
 rules:
 - !SHARDING
     tables:
@@ -338,6 +281,8 @@ public class ExampleUtils {
         try (HikariDataSource dataSource = new HikariDataSource(config);
              Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS t_order (order_id BIGINT NOT NULL, order_type INT, user_id INT NOT NULL, address_id BIGINT NOT NULL, status string, PRIMARY KEY (order_id) disable novalidate) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2')");
+            statement.execute("TRUNCATE TABLE t_order");
             statement.execute("INSERT INTO t_order (user_id, order_type, address_id, status) VALUES (1, 1, 1, 'INSERT_TEST')");
             statement.executeQuery("SELECT * FROM t_order");
             statement.execute("DELETE FROM t_order WHERE order_id=1");
@@ -371,7 +316,7 @@ networks:
 ```
 
 In DBeaver Community,
-use `jdbcUrl` of `jdbc:hive2://127.0.0.1:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2` to connect to HiveServer2,
+use `standardJdbcUrl` of `jdbc:hive2://127.0.0.1:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2` to connect to HiveServer2,
 leave `username` and `password` blank.
 Execute the following SQL,
 
@@ -380,26 +325,6 @@ Execute the following SQL,
 CREATE DATABASE demo_ds_0;
 CREATE DATABASE demo_ds_1;
 CREATE DATABASE demo_ds_2;
-```
-
-Use `jdbcUrl` of `jdbc:hive2://127.0.0.1:2181/demo_ds_0;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`,
-`jdbc:hive2://127.0.0.1:2181/demo_ds_1;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`
-and `jdbc:hive2://127.0.0.1:2181/demo_ds_2;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2`
-to connect to HiveServer2 and execute the following SQL,
-
-```sql
--- noinspection SqlNoDataSourceInspectionForFile
-CREATE TABLE IF NOT EXISTS t_order
-(
-    order_id   BIGINT NOT NULL,
-    order_type INT,
-    user_id    INT    NOT NULL,
-    address_id BIGINT NOT NULL,
-    status     string,
-    PRIMARY KEY (order_id) disable novalidate
-) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2');
-
-TRUNCATE TABLE t_order;
 ```
 
 At this point,
@@ -414,9 +339,12 @@ public class ExampleUtils {
     void test(HikariDataSource dataSource) throws SQLException {
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
+            statement.execute("CREATE TABLE IF NOT EXISTS t_order (order_id BIGINT NOT NULL, order_type INT, user_id INT NOT NULL, address_id BIGINT NOT NULL, status string, PRIMARY KEY (order_id) disable novalidate) STORED BY ICEBERG STORED AS ORC TBLPROPERTIES ('format-version' = '2')");
+            statement.execute("TRUNCATE TABLE t_order");
             statement.execute("INSERT INTO t_order (user_id, order_type, address_id, status) VALUES (1, 1, 1, 'INSERT_TEST')");
             statement.executeQuery("SELECT * FROM t_order");
             statement.execute("DELETE FROM t_order WHERE order_id=1");
+            statement.execute("DROP TABLE IF EXISTS t_order");
         }
     }
 }
@@ -432,7 +360,7 @@ ShardingSphere is only integrated tested for HiveServer2 `4.0.1`.
 
 ### Uber JAR Limitation of HiveServer2 JDBC Driver
 
-Affected by https://issues.apache.org/jira/browse/HIVE-28445,
+Affected by https://issues.apache.org/jira/browse/HIVE-28445 ,
 users should not use `org.apache.hive:hive-jdbc:4.0.1` with `classifier` as `standalone` to avoid dependency conflicts.
 
 ### Embedded HiveServer2 Limitation
@@ -440,44 +368,13 @@ users should not use `org.apache.hive:hive-jdbc:4.0.1` with `classifier` as `sta
 Embedded HiveServer2 is no longer considered user-friendly by the Hive community, 
 and users should not try to start embedded HiveServer2 through ShardingSphere's configuration file.
 Users should always start HiveServer2 through HiveServer2's Docker Image `apache/hive:4.0.1`.
-Reference https://issues.apache.org/jira/browse/HIVE-28418.
-
-### Hadoop Limitations
-
-Users can only use Hadoop `3.3.6` as the underlying Hadoop dependency of HiveServer2 JDBC Driver `4.0.1`.
-HiveServer2 JDBC Driver `4.0.1` does not support Hadoop `3.4.1`. Reference https://github.com/apache/hive/pull/5500 .
-
-For HiveServer2 JDBC Driver `org.apache.hive:hive-jdbc:4.0.1` or `org.apache.hive:hive-jdbc:4.0.1` with `classifier` as `standalone`,
-there is actually no additional dependency on `org.apache.hadoop:hadoop-mapreduce-client-core:3.3.6`.
-
-But `org.apache.shardingsphere:shardingsphere-infra-database-hive`'s
-`org.apache.shardingsphere.infra.database.hive.metadata.data.loader.HiveMetaDataLoader` uses `org.apache.hadoop.hive.conf.HiveConf`,
-which further uses `org.apache.hadoop:hadoop-mapreduce-client-core:3.3.6`'s `org.apache.hadoop.mapred.JobConf` class.
-
-ShardingSphere only needs to use the `org.apache.hadoop.mapred.JobConf` class,
-so it is reasonable to exclude all additional dependencies of `org.apache.hadoop:hadoop-mapreduce-client-core:3.3.6`.
-
-```xml
-<dependency>
-    <groupId>org.apache.hadoop</groupId>
-    <artifactId>hadoop-mapreduce-client-core</artifactId>
-    <version>3.3.6</version>
-    <exclusions>
-        <exclusion>
-            <groupId>*</groupId>
-            <artifactId>*</artifactId>
-        </exclusion>
-    </exclusions>
-</dependency>
-```
+Reference https://issues.apache.org/jira/browse/HIVE-28418 .
 
 ### SQL Limitations
 
-HiveServer2 does not guarantee that every `insert` related DML SQL can be executed successfully, although no exception may be thrown.
-
-ShardingSphere JDBC DataSource does not yet support executing HiveServer2's `set`, `create table`, `truncate table`, 
-and `drop table` statements.
-Users should consider submitting a PR containing unit tests for ShardingSphere.
+ShardingSphere JDBC DataSource does not yet support executing the `set` statement of HiveServer2.
+The current ShardingSphere parsing of HiveServer2's `INNER JOIN` syntax has shortcomings,
+and it may return incorrect query results for SQL statements such as `SELECT i.* FROM t_order o, t_order_item i WHERE o.order_id = i.order_id`.
 
 #### Use `initFile` parameter to partially bypass SQL restrictions
 
@@ -494,15 +391,15 @@ dataSources:
   ds_0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
+    standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
   ds_1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
+    standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
   ds_2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
+    standardJdbcUrl: jdbc:hive2://localhost:10000/demo_ds_0;initFile=/tmp/init.sql
 ```
 
 The possible contents of `/tmp/init.sql` are as follows,
@@ -527,15 +424,15 @@ dataSources:
   ds_0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: $${fixture.hive.ds0.jdbc-url::}
+    standardJdbcUrl: $${fixture.hive.ds0.jdbc-url::}
   ds_1:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: $${fixture.hive.ds1.jdbc-url::}
+    standardJdbcUrl: $${fixture.hive.ds1.jdbc-url::}
   ds_2:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: org.apache.hive.jdbc.HiveDriver
-    jdbcUrl: $${fixture.hive.ds2.jdbc-url::}
+    standardJdbcUrl: $${fixture.hive.ds2.jdbc-url::}
 ```
 
 When using ShardingSphere JDBC Driver, 
@@ -600,7 +497,7 @@ create table IF NOT EXISTS t_order
 ```
 
 The second option is to use Iceberg tables. The possible table creation process is as follows. Apache Iceberg table format is expected to replace the traditional Hive table format in the next few years.
-Refer to https://blog.cloudera.com/from-hive-tables-to-iceberg-tables-hassle-free/ .
+Refer to https://lists.apache.org/thread/cfwxjd8tjt2wwz54crdjy2qsgzjnfxfm .
 
 ```sql
 -- noinspection SqlNoDataSourceInspectionForFile
@@ -617,7 +514,7 @@ CREATE TABLE IF NOT EXISTS t_order
 
 Iceberg table format supports relatively few Hive types. 
 Executing SQL `set iceberg.mr.schema.auto.conversion=true;` for HiveServer2 can help alleviate this problem.
-SQL `set iceberg.mr.schema.auto.conversion=true;` has the drawbacks mentioned in https://issues.apache.org/jira/browse/HIVE-26507 .
+However, the SQL statement `set iceberg.mr.schema.auto.conversion=true;` has the drawbacks mentioned in https://issues.apache.org/jira/browse/HIVE-26507 .
 
 ### Transaction Limitations
 

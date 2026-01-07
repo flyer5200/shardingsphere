@@ -46,7 +46,7 @@ ShardingSphere Proxy Native 的默认端口为 `3307`，配置文件从 `/opt/sh
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -66,7 +66,7 @@ services:
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd-mostly
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af-mostly
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -84,7 +84,7 @@ services:
 ```yaml
 services:
   apache-shardingsphere-proxy-native:
-    image: ghcr.io/apache/shardingsphere-proxy-native:da826af47804dae79b1ba5717af86792726745fd-static
+    image: ghcr.io/apache/shardingsphere-proxy-native:a2661a750be0301cb221ba8f549504f04cc8a5af-static
     volumes:
       - ./custom/conf:/opt/shardingsphere-proxy/conf
     ports:
@@ -95,7 +95,7 @@ services:
 
 若从源码构建，开发者有2种选择，
 
-1. 在不安装本地工具链的情况下，构建包含 ShardingSphere Proxy Native 产物的 `Linux Docker Image`
+1. 在不安装本地工具链的情况下，构建包含 ShardingSphere Proxy Native 产物的 `Linux Container`
 2. 在安装本地工具链的情况下，构建包含 ShardingSphere Proxy Native 产物。对于 Windows，可通过此途径创建`.exe`形态的 GraalVM Native Image
 
 ### 使用存在自定义 SPI 实现的 JAR 或第三方依赖的 JAR
@@ -113,7 +113,7 @@ services:
 </dependencies>
 ```
 
-### 构建 Linux Docker Image
+### 构建 Linux Container
 
 #### 前提条件
 
@@ -137,27 +137,38 @@ sdk install java 21.0.7-ms
 sdk use java 21.0.7-ms
 ```
 
-可在 bash 通过如下命令安装 Rootful 模式的 Docker Engine。本文不讨论更改 `/etc/docker/daemon.json` 的默认 logging driver。
+可在 bash 通过如下命令安装 Rootful 模式的 Docker Engine。
 
 ```shell
-sudo apt update && sudo apt upgrade -y
-sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc
-cd /tmp/
-sudo apt-get install ca-certificates curl
+sudo apt update && sudo apt upgrade --assume-yes
+sudo apt-get remove docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc
+sudo apt install ca-certificates curl --assume-yes
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --assume-yes
 sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
+
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "log-driver": "local",
+  "min-api-version": "1.24"
+}
+EOF
+
+sudo systemctl restart docker.service
 ```
 
 ##### Windows
@@ -167,7 +178,7 @@ newgrp docker
 可在 Powershell 7 通过如下命令利用 `version-fox/vfox` 安装 OpenJDK 21。
 
 ```shell
-winget install version-fox.vfox
+winget install --id version-fox.vfox --source winget --exact
 if (-not (Test-Path -Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force }; Add-Content -Path $PROFILE -Value 'Invoke-Expression "$(vfox activate pwsh)"'
 # 此时需要打开新的 Powershell 7 终端
 vfox add java
@@ -185,8 +196,27 @@ vfox use --global java@21.0.7-ms
 wsl --install
 ```
 
-完成 WSL2 的启用后，在 https://rancherdesktop.io/ 下载和安装 `rancher-sandbox/rancher-desktop`，并设置使用 `dockerd(moby)` 的 `Container Engine`。
-本文不讨论更改 Linux 发行版 `rancher-desktop` 的 `/etc/docker/daemon.json` 的默认 logging driver。
+完成 WSL2 的启用后，通过如下的 PowerShell 7 命令下载和安装 `rancher-sandbox/rancher-desktop`，
+并设置使用 `dockerd(moby)` 的 `Container Engine`。
+
+```shell
+winget install --id SUSE.RancherDesktop --source winget --skip-dependencies
+# 打开新的 PowerShell 7 终端
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+
+@'
+{
+  "features": {
+    "containerd-snapshotter": true
+  },
+  "log-driver": "local"
+}
+'@ | rdctl shell sudo tee /etc/docker/daemon.json
+
+rdctl shutdown
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+```
+
 
 #### 构建包含动态链接的 GraalVM Native Image 的 Docker Image
 
@@ -260,7 +290,7 @@ services:
 
 贡献者必须在设备安装，
 
-1. GraalVM CE 22.0.2，或与 GraalVM CE 22.0.2 兼容的 GraalVM 下游发行版。以 [GraalVM Native Image](/cn/user-manual/shardingsphere-jdbc/graalvm-native-image) 为准。
+1. GraalVM CE 24.0.2，或与 GraalVM CE 24.0.2 兼容的 GraalVM 下游发行版。以 [GraalVM Native Image](/cn/user-manual/shardingsphere-jdbc/graalvm-native-image) 为准。
 2. 编译 GraalVM Native Image 所需要的本地工具链。以 https://www.graalvm.org/latest/reference-manual/native-image/#prerequisites 为准。
 
 在 Ubuntu 与 Windows 下可能的所需操作与[开发和测试](/cn/user-manual/shardingsphere-jdbc/graalvm-native-image/development)一致。
@@ -288,7 +318,7 @@ cd ./shardingsphere/
 ```shell
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+AddAllCharsets,-H:+StaticExecutableWithDynamicLibC" clean package
+./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+UnlockExperimentalVMOptions,-H:+AddAllCharsets,-H:+IncludeAllLocales,--static-nolibc" clean package
 ```
 
 #### 构建完全静态链接的 GraalVM Native Image
@@ -298,7 +328,7 @@ cd ./shardingsphere/
 ```shell
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+AddAllCharsets,--static,--libc=musl" clean package
+./mvnw -am -pl distribution/proxy-native -T1C -DskipTests "-Prelease.native" "-DbuildArgs=-H:+UnlockExperimentalVMOptions,-H:+AddAllCharsets,-H:+IncludeAllLocales,--static,--libc=musl" clean package
 ```
 
 #### 使用 GraalVM Native Image
@@ -371,7 +401,7 @@ ShardingSphere 暂时不为通过 Windows 编译的 `动态链接的 GraalVM Nat
 
 ### Wasm 模块限制
 
-尽管 `Oracle GraalVM Early Access Builds For JDK 25 EA 24` 已支持构建 `Wasm 模块`形态的 GraalVM Native Image，
-但 ShardingSphere 尚未准备好在 OpenJDK 25 下测试 CI。
+尽管 `Oracle GraalVM Early Access Builds For JDK 26 EA 3` 已支持构建 `Wasm 模块`形态的 GraalVM Native Image，
+但 ShardingSphere 尚未准备好在 OpenJDK 26 下测试 CI。
 
 当前，ShardingSphere Proxy Native 未提供编译为 `Wasm 模块` 所需的构建配置。

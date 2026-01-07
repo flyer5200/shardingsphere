@@ -25,7 +25,7 @@ ShardingSphere 定义了，
 
 贡献者必须在设备安装，
 
-1. GraalVM CE 22.0.2，或与 GraalVM CE 22.0.2 兼容的 GraalVM 下游发行版。以 [GraalVM Native Image](/cn/user-manual/shardingsphere-jdbc/graalvm-native-image) 为准。
+1. GraalVM CE 24.0.2，或与 GraalVM CE 24.0.2 兼容的 GraalVM 下游发行版。以 [GraalVM Native Image](/cn/user-manual/shardingsphere-jdbc/graalvm-native-image) 为准。
 2. 编译 GraalVM Native Image 所需要的本地工具链。以 https://www.graalvm.org/latest/reference-manual/native-image/#prerequisites 为准。
 3. 可运行 Linux Containers 的 Docker Engine，或与 testcontainers-java 兼容的 Container Runtime。以 https://java.testcontainers.org/supported_docker_environment/ 为准。
 
@@ -41,8 +41,8 @@ ShardingSphere 定义了，
 sudo apt install unzip zip -y
 curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk install java 22.0.2-graalce
-sdk use java 22.0.2-graalce
+sdk install java 24.0.2-graalce
+sdk use java 24.0.2-graalce
 ```
 
 可在 bash 通过如下命令安装编译 GraalVM Native Image 所需要的本地工具链。
@@ -51,27 +51,38 @@ sdk use java 22.0.2-graalce
 sudo apt-get install build-essential zlib1g-dev -y
 ```
 
-可在 bash 通过如下命令安装 Rootful 模式的 Docker Engine。本文不讨论更改 `/etc/docker/daemon.json` 的默认 logging driver。
+可在 bash 通过如下命令安装 Rootful 模式的 Docker Engine。
 
 ```shell
-sudo apt update && sudo apt upgrade -y
-sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc
-cd /tmp/
-sudo apt-get install ca-certificates curl
+sudo apt update && sudo apt upgrade --assume-yes
+sudo apt-get remove docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc
+sudo apt install ca-certificates curl --assume-yes
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --assume-yes
 sudo groupadd docker
 sudo usermod -aG docker $USER
 newgrp docker
+
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "log-driver": "local",
+  "min-api-version": "1.24"
+}
+EOF
+
+sudo systemctl restart docker.service
 ```
 
 ### Windows
@@ -81,21 +92,21 @@ newgrp docker
 可在 Powershell 7 通过如下命令利用 `version-fox/vfox` 安装 GraalVM CE。
 
 ```shell
-winget install version-fox.vfox
+winget install --id version-fox.vfox --source winget --exact
 if (-not (Test-Path -Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force }; Add-Content -Path $PROFILE -Value 'Invoke-Expression "$(vfox activate pwsh)"'
 # 此时需要打开新的 Powershell 7 终端
 vfox add java
-vfox install java@22.0.2-graalce
-vfox use --global java@22.0.2-graalce
+vfox install java@24.0.2-graalce
+vfox use --global java@24.0.2-graalce
 ```
 
-当 Windows 弹出窗口，要求允许类似 `C:\users\shard\.version-fox\cache\java\v-22.0.2-graalce\java-22.0.2-graalce\bin\java.exe` 路径的应用通过 Windows 防火墙时，应当批准。
+当 Windows 弹出窗口，要求允许类似 `C:\users\shard\.version-fox\cache\java\v-24.0.2-graalce\java-24.0.2-graalce\bin\java.exe` 路径的应用通过 Windows 防火墙时，应当批准。
 背景参考 https://support.microsoft.com/en-us/windows/risks-of-allowing-apps-through-windows-firewall-654559af-3f54-3dcf-349f-71ccd90bcc5c 。
 
 可在 Powershell 7 通过如下命令安装编译 GraalVM Native Image 所需要的本地工具链。**特定情况下，开发者可能需要为 Visual Studio 的使用购买许可证。**
 
 ```shell
-winget install --id Microsoft.VisualStudio.2022.Community
+winget install --id Microsoft.VisualStudio.2022.Community --source winget --exact
 ```
 
 打开 `Visual Studio Installer` 以修改 `Visual Studio Community 2022` 的 `工作负荷`，勾选 `桌面应用与移动应用` 的 `使用 C++ 的桌面开发` 后点击`修改`。
@@ -106,13 +117,56 @@ winget install --id Microsoft.VisualStudio.2022.Community
 wsl --install
 ```
 
-完成 WSL2 的启用后，在 https://rancherdesktop.io/ 下载和安装 `rancher-sandbox/rancher-desktop`，并设置使用 `dockerd(moby)` 的 `Container Engine`。
-本文不讨论更改 Linux 发行版 `rancher-desktop` 的 `/etc/docker/daemon.json` 的默认 logging driver。
+完成 WSL2 的启用后，通过如下的 PowerShell 7 命令下载和安装 `rancher-sandbox/rancher-desktop`，
+并设置使用 `dockerd(moby)` 的 `Container Engine`。
+
+```shell
+winget install --id SUSE.RancherDesktop --source winget --skip-dependencies
+# 打开新的 PowerShell 7 终端
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+
+@'
+{
+  "features": {
+    "containerd-snapshotter": true
+  },
+  "log-driver": "local"
+}
+'@ | rdctl shell sudo tee /etc/docker/daemon.json
+
+rdctl shutdown
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+```
 
 ### Windows Server
 
-对于通常的 Windows Server 2025 实例，操作等同于 Windows 11 Home 24H2。
-但 `windows-latest` 的 Github Actions Runner 实例无法运行 Linux Containers，因此 ShardingSphere 不为 Windows 设置 nativeTest 的 CI。
+对于通常的 `Windows Server 2025` 实例，操作等同于 `Windows 11 Home 24H2`。
+
+但受 https://github.com/rancher-sandbox/rancher-desktop/issues/3999 影响，
+如果开发者正在使用的 `Windows Server 2025` 实例包含可运行 Windows Containers 的 Docker Engine，
+则需要使用 Microsoft 提供的脚本卸载 Docker Engine 后，再安装 Rancher Desktop。
+可在 PowerShell 7 执行如下命令，
+
+```shell
+iex "& { $(irm https://raw.githubusercontent.com/microsoft/Windows-Containers/refs/heads/Main/helpful_tools/Install-DockerCE/uninstall-docker-ce.ps1) } -Force"
+winget install --id SUSE.RancherDesktop --source winget --skip-dependencies
+# 打开新的 PowerShell 7 终端
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+
+@'
+{
+  "features": {
+    "containerd-snapshotter": true
+  },
+  "log-driver": "local"
+}
+'@ | rdctl shell sudo tee /etc/docker/daemon.json
+
+rdctl shutdown
+rdctl start --application.start-in-background --container-engine.name=moby --kubernetes.enabled=false
+```
+
+这类操作常见于 `windows-latest` 的 GitHub Actions Runner 中。
 
 ## 处理单元测试
 
@@ -123,7 +177,7 @@ wsl --install
 ```shell
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -PgenerateMetadata -e -T 1C clean test
+./mvnw -PgenerateMetadata -e -T 1C clean verify
 ```
 
 ### 在 GraalVM Native Image 下执行单元测试
@@ -133,7 +187,7 @@ cd ./shardingsphere/
 ```bash
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -PnativeTestInShardingSphere -e -T 1C clean test
+./mvnw -PnativeTestInShardingSphere -e -T 1C clean verify
 ```
 
 当 Windows 弹出窗口，要求允许类似 `C:\users\shard\shardingsphere\test\native\target\native-tests.exe.exe` 路径的应用通过 Windows 防火墙时，应当批准。
@@ -154,7 +208,7 @@ cd ./shardingsphere/
 ```bash
 git clone git@github.com:apache/shardingsphere.git
 cd ./shardingsphere/
-./mvnw -PgenerateMetadata -e -T 1C clean test native:metadata-copy
+./mvnw -PgenerateMetadata -e -T 1C clean verify native:metadata-copy
 ```
 
 贡献者仍可能需要手动调整具体的 JSON 条目，并适时调整 Maven Profile 和 GraalVM Tracing Agent 的 Filter 链。
@@ -163,35 +217,46 @@ cd ./shardingsphere/
 而 `META-INF/native-image/org.apache.shardingsphere/generated-reachability-metadata/` 中的条目仅应由 `generateMetadata` 的 Maven Profile 生成。
 
 对于测试类和测试文件独立使用的 GraalVM Reachability Metadata，贡献者应该放置到 `shardingsphere-test-native` 子模块的 classpath 的
-`META-INF/native-image/shardingsphere-test-native-test-metadata/` 下。
+`META-INF/native-image/shardingsphere-test-native/` 下。
 
 ## 已知限制
 
-### `resource-config.json` 限制
+### `reachability-metadata.json` 限制
 
 受 https://github.com/apache/shardingsphere/issues/33206 影响，
 开发者执行 `./mvnw -PgenerateMetadata -T 1C -e clean test native:metadata-copy` 后，
-`infra/reachability-metadata/src/main/resources/META-INF/native-image/org.apache.shardingsphere/generated-reachability-metadata/resource-config.json` 会生成不必要的包含绝对路径的 JSON 条目，
+`infra/reachability-metadata/src/main/resources/META-INF/native-image/org.apache.shardingsphere/generated-reachability-metadata/reachability-metadata.json` 会生成不必要的包含绝对路径的 JSON 条目，
 
 对于 Ubuntu，类似如下，
 
 ```json
 {
-   "resources":{
-      "includes":[{
-         "condition":{"typeReachable":"org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"},
-         "pattern":"\\Qhome/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/postgresql//global.yaml\\E"
-      }, {
-         "condition":{"typeReachable":"org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"},
-         "pattern":"\\Qhome/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/postgresql/\\E"
-      }, {
-         "condition":{"typeReachable":"org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"},
-         "pattern":"\\Qhome/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/features/sharding//global.yaml\\E"
-      }, {
-         "condition":{"typeReachable":"org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"},
-         "pattern":"\\Qhome/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/features/sharding/\\E"
-      }]},
-   "bundles":[]
+  "resources": [
+    {
+      "condition": {
+        "typeReached": "org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"
+      },
+      "glob": "home/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/mysql/"
+    },
+    {
+      "condition": {
+        "typeReached": "org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"
+      },
+      "glob": "home/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/mysql//global.yaml"
+    },
+    {
+      "condition": {
+        "typeReached": "org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"
+      },
+      "glob": "home/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/postgresql/"
+    },
+    {
+      "condition": {
+        "typeReached": "org.apache.shardingsphere.proxy.backend.config.ProxyConfigurationLoader"
+      },
+      "glob": "home/runner/work/shardingsphere/shardingsphere/test/native/src/test/resources/test-native/yaml/proxy/databases/postgresql//global.yaml"
+    }
+  ]
 }
 ```
 
@@ -245,8 +310,43 @@ class SolutionTest {
 
 ### 单元测试的已知问题
 
-受 https://github.com/apache/shardingsphere/issues/35052 影响，
-`org.apache.shardingsphere.test.natived.jdbc.modes.cluster.EtcdTest` 的单元测试无法在通过 Windows 11 Home 24H2 编译的 GraalVM Native Image 下运行。
-
+受 https://github.com/apache/incubator-seata/issues/7523 影响，
 `org.apache.shardingsphere.test.natived.proxy.transactions.base.SeataTest` 已被禁用，
 因为在 Github Actions Runner 执行此单元测试将导致其他单元测试出现 JDBC 连接泄露。
+
+### `CodeCachePoolMXBean` 限制
+
+当前执行 `./mvnw -PnativeTestInShardingSphere -e -T 1C clean verify` 将涉及到针对 `com.oracle.svm.core.code.CodeCachePoolMXBean` 的警告日志，
+
+```shell
+org.graalvm.nativeimage.MissingReflectionRegistrationError: The program tried to reflectively access
+
+   com.oracle.svm.core.code.CodeCachePoolMXBean$CodeAndDataPool.getConstructors()
+
+without it being registered for runtime reflection. Add com.oracle.svm.core.code.CodeCachePoolMXBean$CodeAndDataPool.getConstructors() to the reflection metadata to solve this problem. See https://www.graalvm.org/latest/reference-manual/native-image/metadata/#reflection for help.
+  java.base@24.0.2/java.lang.Class.getConstructors(DynamicHub.java:1128)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.findConstructors(MBeanIntrospector.java:459)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.getClassMBeanInfo(MBeanIntrospector.java:430)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.getMBeanInfo(MBeanIntrospector.java:389)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanSupport.<init>(MBeanSupport.java:137)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MXBeanSupport.<init>(MXBeanSupport.java:66)
+  java.management@24.0.2/javax.management.StandardMBean.construct(StandardMBean.java:174)
+  java.management@24.0.2/javax.management.StandardMBean.<init>(StandardMBean.java:268)
+org.graalvm.nativeimage.MissingReflectionRegistrationError: The program tried to reflectively access
+
+   com.oracle.svm.core.code.CodeCachePoolMXBean$NativeMetadataPool.getConstructors()
+
+without it being registered for runtime reflection. Add com.oracle.svm.core.code.CodeCachePoolMXBean$NativeMetadataPool.getConstructors() to the reflection metadata to solve this problem. See https://www.graalvm.org/latest/reference-manual/native-image/metadata/#reflection for help.
+  java.base@24.0.2/java.lang.Class.getConstructors(DynamicHub.java:1128)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.findConstructors(MBeanIntrospector.java:459)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.getClassMBeanInfo(MBeanIntrospector.java:430)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanIntrospector.getMBeanInfo(MBeanIntrospector.java:389)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MBeanSupport.<init>(MBeanSupport.java:137)
+  java.management@24.0.2/com.sun.jmx.mbeanserver.MXBeanSupport.<init>(MXBeanSupport.java:66)
+  java.management@24.0.2/javax.management.StandardMBean.construct(StandardMBean.java:174)
+  java.management@24.0.2/javax.management.StandardMBean.<init>(StandardMBean.java:268)
+```
+
+相关警告在 `GraalVM CE For JDK 24.0.2` 上无法避免。
+因为 `com.oracle.svm.core.code.CodeCachePoolMXBean` 的无参构造函数通过 Java 类 `org.graalvm.nativeimage.Platform.HOSTED_ONLY` 被标记为无论实际的 Platform 是什么，
+仅在 Native Image 生成期间可见，且无法在 Runtime 使用的元素。

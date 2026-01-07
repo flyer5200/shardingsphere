@@ -47,7 +47,7 @@ import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate
 import org.apache.shardingsphere.sql.parser.statement.core.segment.dml.predicate.WhereSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.WithSegment;
 import org.apache.shardingsphere.sql.parser.statement.core.segment.generic.table.TableSegment;
-import org.apache.shardingsphere.sql.parser.statement.core.statement.dml.SelectStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.dml.SelectStatement;
 import org.apache.shardingsphere.sql.parser.statement.core.value.identifier.IdentifierValue;
 
 import java.util.Collection;
@@ -87,7 +87,7 @@ public final class SelectStatementBinder implements SQLStatementBinder<SelectSta
     private Multimap<CaseInsensitiveString, TableSegmentBinderContext> createCurrentTableBinderContexts(final SQLStatementBinderContext binderContext, final ProjectionsSegment boundProjections) {
         Multimap<CaseInsensitiveString, TableSegmentBinderContext> result = LinkedHashMultimap.create();
         Collection<ProjectionSegment> subqueryProjections = SubqueryTableBindUtils.createSubqueryProjections(
-                boundProjections.getProjections(), new IdentifierValue(""), binderContext.getDatabaseType(), TableSourceType.MIXED_TABLE);
+                boundProjections.getProjections(), new IdentifierValue(""), binderContext.getSqlStatement().getDatabaseType(), TableSourceType.MIXED_TABLE);
         result.put(new CaseInsensitiveString(""), new SimpleTableSegmentBinderContext(subqueryProjections, TableSourceType.MIXED_TABLE));
         return result;
     }
@@ -95,7 +95,7 @@ public final class SelectStatementBinder implements SQLStatementBinder<SelectSta
     private SelectStatement copy(final SelectStatement sqlStatement, final WithSegment boundWith, final TableSegment boundFrom, final ProjectionsSegment boundProjections,
                                  final WhereSegment boundWhere, final CombineSegment boundCombine, final LockSegment boundLock,
                                  final GroupBySegment boundGroupBy, final OrderBySegment boundOrderBy, final HavingSegment boundHaving) {
-        SelectStatement result = new SelectStatement();
+        SelectStatement result = new SelectStatement(sqlStatement.getDatabaseType());
         result.setWith(boundWith);
         result.setFrom(boundFrom);
         result.setProjections(boundProjections);

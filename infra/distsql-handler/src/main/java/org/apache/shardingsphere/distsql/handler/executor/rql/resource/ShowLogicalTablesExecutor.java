@@ -18,11 +18,11 @@
 package org.apache.shardingsphere.distsql.handler.executor.rql.resource;
 
 import lombok.Setter;
+import org.apache.shardingsphere.database.connector.core.metadata.database.metadata.DialectDatabaseMetaData;
+import org.apache.shardingsphere.database.connector.core.type.DatabaseTypeRegistry;
 import org.apache.shardingsphere.distsql.handler.aware.DistSQLExecutorDatabaseAware;
 import org.apache.shardingsphere.distsql.handler.engine.query.DistSQLQueryExecutor;
-import org.apache.shardingsphere.distsql.statement.rql.resource.ShowLogicalTablesStatement;
-import org.apache.shardingsphere.infra.database.core.metadata.database.metadata.DialectDatabaseMetaData;
-import org.apache.shardingsphere.infra.database.core.type.DatabaseTypeRegistry;
+import org.apache.shardingsphere.distsql.statement.type.rql.resource.ShowLogicalTablesStatement;
 import org.apache.shardingsphere.infra.merge.result.impl.local.LocalDataQueryResultRow;
 import org.apache.shardingsphere.infra.metadata.database.ShardingSphereDatabase;
 import org.apache.shardingsphere.infra.metadata.database.schema.model.ShardingSphereTable;
@@ -47,9 +47,10 @@ public final class ShowLogicalTablesExecutor implements DistSQLQueryExecutor<Sho
     
     @Override
     public Collection<String> getColumnNames(final ShowLogicalTablesStatement sqlStatement) {
-        return sqlStatement.isContainsFull()
-                ? Arrays.asList(String.format("Tables_in_%s", database.getName()), "Table_type")
-                : Collections.singleton(String.format("Tables_in_%s", database.getName()));
+        if (new DatabaseTypeRegistry(database.getProtocolType()).getDialectDatabaseMetaData().getSchemaOption().isSchemaAvailable()) {
+            return sqlStatement.isContainsFull() ? Arrays.asList("table_name", "table_type", "schema_name") : Arrays.asList("table_name", "schema_name");
+        }
+        return sqlStatement.isContainsFull() ? Arrays.asList("table_name", "table_type") : Collections.singleton("table_name");
     }
     
     @Override
@@ -59,10 +60,13 @@ public final class ShowLogicalTablesExecutor implements DistSQLQueryExecutor<Sho
         if (null == database.getSchema(schemaName)) {
             return Collections.emptyList();
         }
-        return getTables(schemaName, sqlStatement).stream().map(each -> getRow(each, sqlStatement)).collect(Collectors.toList());
+        return getTables(schemaName, sqlStatement).stream().map(each -> getRow(schemaName, each, sqlStatement)).collect(Collectors.toList());
     }
     
-    private LocalDataQueryResultRow getRow(final ShardingSphereTable table, final ShowLogicalTablesStatement sqlStatement) {
+    private LocalDataQueryResultRow getRow(final String schemaName, final ShardingSphereTable table, final ShowLogicalTablesStatement sqlStatement) {
+        if (new DatabaseTypeRegistry(database.getProtocolType()).getDialectDatabaseMetaData().getSchemaOption().isSchemaAvailable()) {
+            return sqlStatement.isContainsFull() ? new LocalDataQueryResultRow(table.getName(), table.getType(), schemaName) : new LocalDataQueryResultRow(table.getName(), schemaName);
+        }
         return sqlStatement.isContainsFull() ? new LocalDataQueryResultRow(table.getName(), table.getType()) : new LocalDataQueryResultRow(table.getName());
     }
     

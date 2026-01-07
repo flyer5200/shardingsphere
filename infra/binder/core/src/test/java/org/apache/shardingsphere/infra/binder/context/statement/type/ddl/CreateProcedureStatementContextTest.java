@@ -17,7 +17,7 @@
 
 package org.apache.shardingsphere.infra.binder.context.statement.type.ddl;
 
-import org.apache.shardingsphere.sql.parser.statement.core.statement.ddl.CreateProcedureStatement;
+import org.apache.shardingsphere.sql.parser.statement.core.statement.type.ddl.procedure.CreateProcedureStatement;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,7 +29,7 @@ class CreateProcedureStatementContextTest {
     @Test
     void assertNewInstance() {
         CreateProcedureStatement sqlStatement = mock(CreateProcedureStatement.class);
-        CreateProcedureStatementContext actual = new CreateProcedureStatementContext(mock(), sqlStatement);
+        CreateProcedureStatementContext actual = new CreateProcedureStatementContext(sqlStatement);
         assertThat(actual.getSqlStatement(), is(sqlStatement));
     }
 }

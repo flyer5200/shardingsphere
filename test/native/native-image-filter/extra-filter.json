@@ -4,9 +4,6 @@
 
     {"excludeClasses": "android.app.**"},
     {"excludeClasses": "com.**"},
-    {"includeClasses": "com.oracle.svm.core.**"},
-    {"includeClasses": "com.sun.management.**"},
-    {"includeClasses": "com.sun.security.auth.UnixPrincipal"},
     {"excludeClasses": "ch.qos.logback.**"},
     {"excludeClasses": "groovy.**"},
     {"excludeClasses": "io.**"},
@@ -15,13 +12,18 @@
     {"excludeClasses": "libcore.io.**"},
     {"excludeClasses": "net.bytebuddy.**"},
     {"excludeClasses": "org.**"},
-    {"includeClasses": "org.apache.shardingsphere.**"},
     {"excludeClasses": "sun.**"},
-    {"includeClasses": "sun.security.provider.ConfigFile"},
+    {"excludeClasses": "JdkLogger"},
+
+    {"includeClasses": "com.oracle.svm.core.**"},
+    {"includeClasses": "com.sun.management.**"},
+    {"includeClasses": "org.apache.shardingsphere.**"},
+    {"includeClasses": "sun.nio.ch.SelectorImpl"},
     {"includeClasses": "sun.security.provider.SecureRandom"},
 
     {"excludeClasses": "org.apache.shardingsphere.test.natived.**"}
   ],
   "regexRules": [
+    {"excludeClasses": "^\\[.*$"}
   ]
 }

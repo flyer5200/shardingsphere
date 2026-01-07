@@ -21,7 +21,7 @@ import lombok.Setter;
 import org.apache.shardingsphere.distsql.handler.aware.DistSQLExecutorConnectionContextAware;
 import org.apache.shardingsphere.distsql.handler.engine.DistSQLConnectionContext;
 import org.apache.shardingsphere.distsql.handler.engine.query.DistSQLQueryExecutor;
-import org.apache.shardingsphere.distsql.statement.ral.queryable.show.ShowDistVariablesStatement;
+import org.apache.shardingsphere.distsql.statement.type.ral.queryable.show.ShowDistVariablesStatement;
 import org.apache.shardingsphere.infra.config.props.ConfigurationPropertyKey;
 import org.apache.shardingsphere.infra.config.props.temporary.TemporaryConfigurationPropertyKey;
 import org.apache.shardingsphere.infra.merge.result.impl.local.LocalDataQueryResultRow;
@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -54,12 +55,16 @@ public final class ShowDistVariablesExecutor implements DistSQLQueryExecutor<Sho
     @Override
     public Collection<LocalDataQueryResultRow> getRows(final ShowDistVariablesStatement sqlStatement, final ContextManager contextManager) {
         ShardingSphereMetaData metaData = contextManager.getMetaDataContexts().getMetaData();
-        Collection<LocalDataQueryResultRow> result = ConfigurationPropertyKey.getKeyNames().stream()
-                .map(each -> new LocalDataQueryResultRow(each.toLowerCase(), getStringResult(metaData.getProps().getValue(ConfigurationPropertyKey.valueOf(each))))).collect(Collectors.toList());
-        result.addAll(TemporaryConfigurationPropertyKey.getKeyNames().stream()
-                .map(each -> new LocalDataQueryResultRow(each.toLowerCase(), getStringResult(metaData.getTemporaryProps().getValue(TemporaryConfigurationPropertyKey.valueOf(each)))))
-                .collect(Collectors.toList()));
-        result.add(new LocalDataQueryResultRow(DistSQLVariable.CACHED_CONNECTIONS.name().toLowerCase(), connectionContext.getConnectionSize()));
+        Collection<LocalDataQueryResultRow> result = new LinkedList<>();
+        if (sqlStatement.isShowTemporary()) {
+            result.addAll(TemporaryConfigurationPropertyKey.getKeyNames().stream()
+                    .map(each -> new LocalDataQueryResultRow(each.toLowerCase(), getStringResult(metaData.getTemporaryProps().getValue(TemporaryConfigurationPropertyKey.valueOf(each)))))
+                    .collect(Collectors.toList()));
+        } else {
+            result.addAll(ConfigurationPropertyKey.getKeyNames().stream()
+                    .map(each -> new LocalDataQueryResultRow(each.toLowerCase(), getStringResult(metaData.getProps().getValue(ConfigurationPropertyKey.valueOf(each))))).collect(Collectors.toList()));
+            result.add(new LocalDataQueryResultRow(DistSQLVariable.CACHED_CONNECTIONS.name().toLowerCase(), connectionContext.getConnectionSize()));
+        }
         if (sqlStatement.getLikePattern().isPresent()) {
             String pattern = RegexUtils.convertLikePatternToRegex(sqlStatement.getLikePattern().get());
             result = result.stream().filter(each -> Pattern.compile(pattern, Pattern.CASE_INSENSITIVE).matcher((String) each.getCell(1)).matches()).collect(Collectors.toList());
